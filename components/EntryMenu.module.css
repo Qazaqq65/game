@@ -1,0 +1,741 @@
+/**
+ * Түс схемасы пазл тақтасымен үйлеседі (index.css — --game-anchor).
+ * Қара космос емес — жылы, балаларға түсінікті «қағаз / сынып» стилі.
+ */
+
+.root {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: clamp(10px, 2.5vw, 20px) 0 clamp(20px, 5vw, 36px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  /* clip оң жақтағы ‹ › түймелерін кесіп тастайды */
+  overflow-x: visible;
+  overflow-y: auto;
+  background: var(--game-anchor-soft);
+}
+
+/* Фон: дақтар + нүкте + жүзіп жүрген «пузырлар» */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 8% 20%, rgba(255, 180, 150, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 92% 30%, rgba(180, 210, 255, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 45% at 50% 95%, rgba(190, 230, 200, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 1px 1px, rgba(120, 90, 70, 0.06) 1px, transparent 0);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    24px 24px;
+}
+
+.blob {
+  position: absolute;
+  opacity: 0.42;
+  animation: blobFloat 20s ease-in-out infinite;
+}
+
+.blob1 {
+  width: min(42vw, 200px);
+  height: min(38vw, 180px);
+  left: -6%;
+  top: 12%;
+  border-radius: 63% 37% 54% 46% / 48% 52% 41% 59%;
+  background: linear-gradient(135deg, rgba(255, 190, 170, 0.75) 0%, rgba(255, 220, 200, 0.4) 100%);
+  animation-delay: 0s;
+}
+
+.blob2 {
+  width: min(48vw, 220px);
+  height: min(44vw, 200px);
+  right: -10%;
+  top: 38%;
+  border-radius: 40% 60% 55% 45% / 55% 38% 62% 45%;
+  background: linear-gradient(145deg, rgba(180, 210, 255, 0.65) 0%, rgba(230, 220, 255, 0.45) 100%);
+  animation-delay: -7s;
+}
+
+.blob3 {
+  width: min(36vw, 160px);
+  height: min(32vw, 140px);
+  left: 28%;
+  bottom: 4%;
+  border-radius: 52% 48% 42% 58% / 44% 56% 48% 52%;
+  background: linear-gradient(160deg, rgba(170, 235, 200, 0.55) 0%, rgba(220, 245, 210, 0.35) 100%);
+  animation-delay: -13s;
+}
+
+@keyframes blobFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(14px, -12px) rotate(5deg);
+  }
+  66% {
+    transform: translate(-10px, 14px) rotate(-4deg);
+  }
+}
+
+/* Кот + әріптер бір колоннада: кот үстінде, түймелер дәл астында */
+.filterColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0;
+}
+
+.mascotAboveLetters {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: clamp(-28px, -5vw, -16px);
+  position: relative;
+  z-index: 2;
+}
+
+.perfPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.perfTitle {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: rgba(72, 56, 45, 0.7);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.perfModes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(90, 70, 55, 0.12);
+}
+
+.perfBtn {
+  min-width: 56px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: transparent;
+  color: #4a3d35;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.perfBtnActive {
+  background: linear-gradient(180deg, #fffefb 0%, #f2ebe3 100%);
+  color: #2f2621;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.92) inset,
+    0 2px 6px rgba(80, 60, 45, 0.16);
+}
+
+.perfHint {
+  font-size: 0.72rem;
+  color: rgba(72, 56, 45, 0.62);
+}
+
+/* Жол бойынша сырғыту түймелері (‹ ›) */
+.filterWrap,
+.trackWrap {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(6px, 1.5vw, 10px);
+  width: 100%;
+  max-width: min(100%, 580px);
+  min-width: 0;
+  box-sizing: border-box;
+  margin-inline: auto;
+}
+
+.trackWrap {
+  max-width: 100%;
+}
+
+/* Портрет + тік сөз тізімі (JS: wordsVertical); ∧ ∨ түймелері, жоғары/төмен өшу */
+.trackWrapVertical {
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 2vw, 12px);
+  max-width: 100%;
+}
+
+.trackWrapVertical .track {
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
+  width: 100%;
+  max-height: min(52vh, 480px);
+  gap: clamp(14px, 3vh, 22px);
+  padding: 12px 16px 16px;
+  scroll-snap-type: y proximity;
+  scroll-padding-block: 16px;
+  scroll-padding-inline: 0;
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    #000 10%,
+    #000 90%,
+    transparent
+  );
+}
+
+.trackWrapVertical .track::-webkit-scrollbar {
+  width: 8px;
+  height: auto;
+}
+
+.trackWrapVertical .track::-webkit-scrollbar-thumb {
+  background: rgba(120, 90, 70, 0.22);
+  border-radius: 999px;
+}
+
+.trackWrapVertical .card {
+  width: min(92vw, 320px);
+  scroll-snap-align: center;
+}
+
+.horizScrollBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(90, 70, 55, 0.14);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fffefb 0%, #f2ebe3 100%);
+  color: #5d4e42;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 3px 0 rgba(120, 95, 75, 0.18);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    opacity 0.15s ease,
+    box-shadow 0.12s ease;
+}
+
+.horizScrollBtn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+@media (hover: hover) {
+  .horizScrollBtn:not(:disabled):hover {
+    transform: scale(1.06);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 4px 12px rgba(80, 60, 45, 0.14);
+  }
+}
+
+.horizScrollBtn:not(:disabled):active {
+  transform: scale(0.96);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(900px, 100%);
+  min-width: 0;
+  margin: 0 auto;
+  padding-left: max(clamp(16px, 5vw, 32px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(16px, 5vw, 32px), env(safe-area-inset-right, 0px));
+  padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(28px, 5vh, 40px);
+  box-sizing: border-box;
+}
+
+/* Бір қатар: көп әріп болса да биіктықты алмайды; сырғыту = саусақ немесе ‹ › */
+.filter {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(90, 70, 55, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 12px 40px rgba(80, 60, 45, 0.08);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(80, 60, 45, 0.28) transparent;
+}
+
+.filter::-webkit-scrollbar {
+  height: 5px;
+}
+
+.filter::-webkit-scrollbar-thumb {
+  background: rgba(80, 60, 45, 0.28);
+  border-radius: 4px;
+}
+
+.filterBtn {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #4a3d35;
+  font-size: 1.08rem;
+  font-weight: 800;
+  font-family: var(--font-display-kz);
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.06);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+@media (hover: hover) {
+  .filterBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(80, 60, 45, 0.12);
+  }
+}
+
+.filterBtnOn {
+  color: #fff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Әріп түстері */
+.filterBtn[data-letter="А"].filterBtnOn {
+  background: linear-gradient(180deg, #ff8a65 0%, #e85d3d 100%);
+}
+
+.filterBtn[data-letter="Ә"].filterBtnOn {
+  background: linear-gradient(180deg, #b388ff 0%, #7c4dff 100%);
+}
+
+.filterBtn[data-letter="Б"].filterBtnOn {
+  background: linear-gradient(180deg, #4fc3b0 0%, #26a69a 100%);
+}
+
+/* Басқа әріп қоссаң — әдепкі */
+.filterBtn.filterBtnOn:not([data-letter="А"]):not([data-letter="Ә"]):not([data-letter="Б"]) {
+  background: linear-gradient(180deg, #78909c 0%, #546e7a 100%);
+}
+
+.stage {
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  gap: clamp(14px, 3.5vw, 22px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* pan-x: алғашқы тап скролл жестіне жұмсалмай, картадағы click тұрақты болуы үшін */
+  touch-action: pan-x;
+  padding: 8px 8px 20px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: clamp(20px, 6vw, 40px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 90, 70, 0.25) transparent;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.track::-webkit-scrollbar {
+  height: 8px;
+}
+
+.track::-webkit-scrollbar-thumb {
+  background: rgba(120, 90, 70, 0.22);
+  border-radius: 999px;
+}
+
+.card {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  width: min(156px, 34vw);
+  min-height: 148px;
+  padding: 0;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+  background: transparent;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cardInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 148px;
+  padding: 20px 16px 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fffefb 0%, #faf6ef 100%);
+  border: 1px solid rgba(90, 70, 55, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 10px 28px rgba(80, 60, 45, 0.1),
+    0 4px 0 rgba(180, 155, 125, 0.45);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .card:hover .cardInner {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 16px 40px rgba(80, 60, 45, 0.14),
+      0 5px 0 rgba(180, 155, 125, 0.5);
+  }
+}
+
+/* Төменгі түс жолы = қай топтан екені */
+.card[data-letter="А"] .cardInner {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 10px 28px rgba(80, 60, 45, 0.1),
+    0 4px 0 #e85d3d;
+}
+
+.card[data-letter="Ә"] .cardInner {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 10px 28px rgba(80, 60, 45, 0.1),
+    0 4px 0 #7c4dff;
+}
+
+.card[data-letter="Б"] .cardInner {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 10px 28px rgba(80, 60, 45, 0.1),
+    0 4px 0 #26a69a;
+}
+
+@media (hover: hover) {
+  .card:hover[data-letter="А"] .cardInner {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 16px 40px rgba(232, 93, 61, 0.2),
+      0 5px 0 #e85d3d;
+  }
+
+  .card:hover[data-letter="Ә"] .cardInner {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 16px 40px rgba(124, 77, 255, 0.2),
+      0 5px 0 #7c4dff;
+  }
+
+  .card:hover[data-letter="Б"] .cardInner {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 16px 40px rgba(38, 166, 154, 0.2),
+      0 5px 0 #26a69a;
+  }
+}
+
+.cardEmoji {
+  display: block;
+  font-size: clamp(2.5rem, 10vw, 3rem);
+  line-height: 1;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
+  animation: emojiBob 3s ease-in-out infinite;
+}
+
+.card[data-index="1"] .cardEmoji,
+.card[data-index="4"] .cardEmoji {
+  animation-delay: -0.6s;
+}
+
+.card[data-index="2"] .cardEmoji,
+.card[data-index="5"] .cardEmoji {
+  animation-delay: -1.2s;
+}
+
+@keyframes emojiBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.cardWord {
+  display: block;
+  font-size: clamp(0.92rem, 3.5vw, 1.08rem);
+  font-weight: 900;
+  font-family: var(--font-display-kz);
+  letter-spacing: 0.02em;
+  color: #2c2420;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Телефон: үлкен саусақ алаңы, толық ені */
+@media (max-width: 600px) {
+  .inner {
+    gap: clamp(18px, 4vh, 28px);
+  }
+
+  .filterWrap {
+    max-width: 100%;
+  }
+
+  .horizScrollBtn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+
+  .filter {
+    padding: 10px 12px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .filterBtn {
+    min-width: 48px;
+    min-height: 48px;
+    height: 48px;
+    padding: 0 14px;
+    font-size: 1.14rem;
+    border-radius: 14px;
+  }
+
+  .track {
+    gap: 16px;
+    padding: 12px max(12px, env(safe-area-inset-left)) 22px
+      max(12px, env(safe-area-inset-right));
+    scroll-padding-inline: max(16px, env(safe-area-inset-left));
+  }
+
+  .card {
+    width: min(168px, 78vw);
+    min-height: 158px;
+  }
+
+  .cardInner {
+    min-height: 158px;
+    padding: 22px 18px 20px;
+  }
+
+  .cardEmoji {
+    font-size: clamp(2.65rem, 12vw, 3.1rem);
+    margin-bottom: 14px;
+  }
+
+  .cardWord {
+    font-size: clamp(0.98rem, 4vw, 1.12rem);
+  }
+}
+
+/* Планшет */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .filterWrap {
+    max-width: min(100%, 720px);
+  }
+
+  .horizScrollBtn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .filter {
+    padding: 8px 14px;
+    gap: 10px;
+  }
+
+  .filterBtn {
+    min-width: 50px;
+    min-height: 50px;
+    height: 50px;
+    padding: 0 16px;
+    font-size: 1.18rem;
+    border-radius: 14px;
+  }
+
+  .track {
+    gap: 18px;
+    padding: 10px max(16px, env(safe-area-inset-left)) 22px
+      max(16px, env(safe-area-inset-right));
+  }
+
+  .card {
+    width: min(164px, 30vw);
+    min-height: 152px;
+  }
+
+  .cardInner {
+    min-height: 152px;
+    padding: 21px 17px 19px;
+  }
+
+  .cardEmoji {
+    font-size: clamp(2.55rem, 6vw, 2.95rem);
+  }
+}
+
+/* Тік + тар экран: сөздер тік (trackWrapVertical), әріптер — солдан оңға сырғыту, ‹ › қалады */
+@media (orientation: portrait) and (max-width: 1024px) {
+  .filterWrap {
+    max-width: 100%;
+  }
+
+  .perfBtn {
+    min-width: 52px;
+    height: 34px;
+    font-size: 0.76rem;
+  }
+}
+
+/*
+ * Төмен көлденең (мысалы 844×390): жол толық сыйсын, оңдағы › көрінсін.
+ */
+@media (orientation: landscape) and (max-height: 520px) {
+  .root {
+    padding-top: max(6px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .inner {
+    gap: clamp(10px, 3vh, 20px);
+  }
+
+  .filterWrap,
+  .trackWrap {
+    max-width: 100%;
+    gap: 4px;
+  }
+
+  .horizScrollBtn {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .filter {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .filterBtn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+    font-size: 1rem;
+  }
+
+  .track {
+    gap: 10px;
+    padding: 6px 4px 10px;
+    scroll-padding-inline: max(8px, env(safe-area-inset-left, 0px))
+      max(8px, env(safe-area-inset-right, 0px));
+  }
+
+  .card {
+    width: min(124px, 22vw);
+    min-height: 120px;
+  }
+
+  .cardInner {
+    min-height: 120px;
+    padding: 12px 10px 10px;
+  }
+
+  .cardEmoji {
+    font-size: clamp(1.85rem, 7vw, 2.4rem);
+    margin-bottom: 8px;
+  }
+
+  .cardWord {
+    font-size: clamp(0.82rem, 2.8vw, 0.95rem);
+  }
+
+  .mascotAboveLetters {
+    margin-top: -30px;
+    margin-bottom: clamp(-20px, -3vw, -10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob,
+  .cardEmoji {
+    animation: none !important;
+  }
+}

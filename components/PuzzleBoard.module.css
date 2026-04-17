@@ -1,0 +1,268 @@
+/* Тақта толық фон, түймелер үстінде */
+.shell {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.boardBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Толық shell координаталары: тасымал түймелер арасында да жүре алады */
+.tileLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+  font-family: var(--font-display-kz);
+  user-select: none;
+  touch-action: none;
+  contain: layout paint style;
+}
+
+.tileLayer :is(svg) {
+  touch-action: none;
+}
+
+.topBar {
+  position: absolute;
+  z-index: 220;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  gap: 8px;
+  padding: max(6px, env(safe-area-inset-top, 0px))
+    max(10px, env(safe-area-inset-right, 0px)) 10px
+    max(10px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.topBar :is(button, .levelBadge) {
+  pointer-events: auto;
+}
+
+.topBarSide {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.topBarSide:first-child {
+  justify-content: flex-start;
+}
+
+.topBarSide:last-child {
+  justify-content: flex-end;
+  /* Үй түймесімен симметрия */
+  min-height: 44px;
+}
+
+.fullscreenBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: var(--font-display-kz);
+  color: var(--game-anchor-ink);
+  background: linear-gradient(
+    180deg,
+    var(--game-anchor-highlight) 0%,
+    var(--game-anchor-raised) 100%
+  );
+  border: 1px solid var(--game-anchor-border);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 3px 0 rgba(120, 95, 75, 0.16);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+.fullscreenBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+@media (hover: hover) {
+  .fullscreenBtn:hover {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 4px 10px rgba(80, 60, 45, 0.12);
+  }
+}
+
+.bottomBar {
+  position: absolute;
+  z-index: 220;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px max(10px, env(safe-area-inset-right, 0px))
+    max(8px, env(safe-area-inset-bottom, 0px))
+    max(10px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.bottomBar .toolBtn {
+  pointer-events: auto;
+}
+
+.boardRoot {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  flex-shrink: 1;
+  border-radius: clamp(12px, 2.5vw, 20px);
+  border: 1px solid color-mix(in srgb, var(--game-anchor-ink) 10%, transparent);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 16px 48px rgba(80, 60, 45, 0.12);
+  font-family: var(--font-display-kz);
+  user-select: none;
+  /* Телефон: скролл/жест браузері бірінші touchты жеп қоюы мүмкін — тақтада тасымал бірден */
+  touch-action: none;
+}
+
+.boardRoot :is(svg) {
+  touch-action: none;
+}
+
+.levelBadge {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  font-size: clamp(0.78rem, 2.8vw, 0.9rem);
+  font-weight: 700;
+  font-family: var(--font-display-kz);
+  color: color-mix(in srgb, var(--game-anchor-ink) 72%, transparent);
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--game-anchor-highlight) 88%, transparent);
+  border-radius: 999px;
+  border: 1px solid var(--game-anchor-border);
+  box-shadow: 0 2px 12px rgba(80, 60, 45, 0.08);
+}
+
+.homeBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: clamp(0.85rem, 3vw, 0.95rem);
+  font-weight: 800;
+  font-family: var(--font-display-kz);
+  color: var(--game-anchor-ink);
+  background: linear-gradient(
+    180deg,
+    var(--game-anchor-highlight) 0%,
+    var(--game-anchor-raised) 100%
+  );
+  border: 1px solid var(--game-anchor-border);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 3px 0 rgba(120, 95, 75, 0.16);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.toolBtn {
+  min-height: 44px;
+  min-width: min(44%, 160px);
+  padding: 8px 12px;
+  font-size: clamp(0.78rem, 2.8vw, 0.9rem);
+  font-weight: 800;
+  font-family: var(--font-display-kz);
+  color: var(--game-anchor-ink);
+  background: linear-gradient(
+    180deg,
+    var(--game-anchor-highlight) 0%,
+    var(--game-anchor-raised) 100%
+  );
+  border: 1px solid var(--game-anchor-border);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 3px 0 rgba(120, 95, 75, 0.16);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+  line-height: 1.2;
+}
+
+.toolBtn:active,
+.homeBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+@media (hover: hover) {
+  .toolBtn:hover,
+  .homeBtn:hover {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 4px 10px rgba(80, 60, 45, 0.12);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 460px) {
+  .levelBadge {
+    padding: 2px 8px;
+    font-size: 0.72rem;
+  }
+
+  .homeBtn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+  }
+
+  .topBarSide:last-child {
+    min-height: 40px;
+  }
+
+  .bottomBar {
+    min-height: 42px;
+    gap: 8px;
+  }
+
+  .toolBtn {
+    min-height: 40px;
+    min-width: min(46%, 140px);
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+}

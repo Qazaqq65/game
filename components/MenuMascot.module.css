@@ -1,0 +1,23 @@
+.wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 clamp(4px, 2vw, 12px);
+  margin: 0;
+  pointer-events: none;
+}
+
+.wrap * {
+  pointer-events: none;
+}
+
+/* ≈3× бұрынғы өлшем; әріптердің үстіне тұрғанда көрінетіндей */
+.lottie {
+  width: clamp(216px, 60vw, 360px) !important;
+  max-height: clamp(240px, 58vw, 400px) !important;
+}
