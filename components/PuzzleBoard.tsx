@@ -33,7 +33,7 @@ interface PuzzleBoardProps {
   bgColor?: string;
   onComplete?: (word: string) => void;
   onNext: () => void;
-  /** Ойын кезінде: басты бет, алдыңғы/келесі сөз */
+  /** Ойын кезінде: басты бет, артқа/алға сөз */
   onNavigateHome?: () => void;
   onNavigatePrevWord?: () => void;
   onNavigateNextWord?: () => void;
@@ -274,19 +274,19 @@ export function PuzzleBoard({
       <div className={styles.bottomBar}>
         <button
           type="button"
-          className={styles.toolBtn}
-          onClick={onNavigateNextWord}
-          aria-label="Келесі деңгей"
+          className={`${styles.toolBtn} ${styles.toolBtnBack}`}
+          onClick={onNavigatePrevWord}
+          aria-label="Артқа, алдыңғы сөз"
         >
-          Келесі →
+          ← Артқа
         </button>
         <button
           type="button"
-          className={styles.toolBtn}
-          onClick={onNavigatePrevWord}
-          aria-label="Алдыңғы деңгей"
+          className={`${styles.toolBtn} ${styles.toolBtnNext}`}
+          onClick={onNavigateNextWord}
+          aria-label="Алға, келесі сөз"
         >
-          ← Алдыңғы
+          Алға →
         </button>
       </div>
     </div>

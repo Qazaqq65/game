@@ -175,6 +175,7 @@ export function MonsterLetterMeltingI({
             cy={eyeY}
             rx={eyeRx}
             ry={eyeRy}
+            initial={{ ry: eyeRy }}
             animate={{
               ry: isDragging
                 ? eyeRy
@@ -198,6 +199,7 @@ export function MonsterLetterMeltingI({
             cy={eyeY}
             rx={eyeRx}
             ry={eyeRy}
+            initial={{ ry: eyeRy }}
             animate={{
               ry: isDragging
                 ? eyeRy
@@ -220,6 +222,7 @@ export function MonsterLetterMeltingI({
           <motion.circle
             cx={eyeLX}
             cy={eyeY + pupilOffY}
+            initial={{ cy: eyeY + pupilOffY }}
             animate={{ cy: eyeY + pupilOffY }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             r={pupilR}
@@ -228,6 +231,7 @@ export function MonsterLetterMeltingI({
           <motion.circle
             cx={eyeRX}
             cy={eyeY + pupilOffY}
+            initial={{ cy: eyeY + pupilOffY }}
             animate={{ cy: eyeY + pupilOffY }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             r={pupilR}
@@ -236,6 +240,7 @@ export function MonsterLetterMeltingI({
 
           <motion.path
             d={currentMouth}
+            initial={{ d: currentMouth }}
             animate={{ d: currentMouth }}
             transition={
               isDragging

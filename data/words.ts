@@ -59,24 +59,13 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
     letter: "Ә",
     words: [
       {
-        word: "ӘЖЕ",
-        emoji: "👵",
+        word: "ӘТЕШ",
+        emoji: "🔥",
         letters: [
           L("Ә", "#FF2E74", "dots", "#B30046"),
-          L("Ж", "#FF8A00", "lines", "#B85D00", "on", { eyeY: 0.44, mouthY: 0.73, eyeLX: 0.31, eyeRX: 0.69 }),
-          L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75, cheekY: 0.63 }),
-        ],
-      },
-      {
-        word: "ӘНҰРАН",
-        emoji: "🎵",
-        letters: [
-          L("Ә", "#FF2E74", "dots", "#B30046"),
-          L("Н", "#00B884", "lines", "#067A5A", "on", { eyeY: 0.45, mouthY: 0.75 }),
-          L("Ұ", "#FFB000", "lines", "#B37700", "on", { eyeY: 0.45, mouthY: 0.75 }),
-          L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
-          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
-          L("Н", "#E63D00", "dots", "#9E2A00", "on", { eyeY: 0.45, mouthY: 0.75 }),
+          L("Т", "#A64CFF", "dots", "#6526A8", "off"),
+          L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75 }),
+          L("Ш", "#FF8A00", "lines", "#B85D00", "off"),
         ],
       },
     ],
@@ -92,21 +81,6 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
           L("Л", "#B23CFF", "spots", "#6A1FA8", "off"),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
-        ],
-      },
-      {
-        word: "БАҒДАРШАМ",
-        emoji: "🚦",
-        letters: [
-          L("Б", "#26A88C", "dots", "#176E5C", "off"),
-          L("А", "#FF8A00", "lines", "#B85D00", "on", faceA.faceLayout),
-          L("Ғ", "#8B4513", "lines", "#5C2E0D", "off"),
-          L("Д", "#4F6DFF", "dots", "#2439B8", "off"),
-          L("А", "#FF8A00", "lines", "#B85D00", "on", faceA.faceLayout),
-          L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
-          L("Ш", "#A64CFF", "dots", "#6526A8", "off"),
-          L("А", "#FF8A00", "lines", "#B85D00", "on", faceA.faceLayout),
-          L("М", "#FF6B2C", "lines", "#B74711", "on", { eyeY: 0.44, mouthY: 0.74 }),
         ],
       },
     ],
@@ -151,19 +125,6 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
           L("Д", "#4F6DFF", "dots", "#2439B8", "off"),
           L("О", "#FF6B2C", "lines", "#B74711", "on", { eyeY: 0.42, mouthY: 0.73 }),
           L("П", "#00B884", "lines", "#067A5A", "off"),
-        ],
-      },
-      {
-        word: "ДӘРІГЕР",
-        emoji: "🧑‍⚕️",
-        letters: [
-          L("Д", "#2E86FF", "dots", "#1B4FB5", "off"),
-          L("Ә", "#FF2E74", "dots", "#B30046"),
-          L("Р", "#A64CFF", "dots", "#6526A8", "off"),
-          L("І", "#26C24A", "lines", "#12802D", "on", { eyeY: 0.44, mouthY: 0.74 }),
-          L("Г", "#FF8A00", "lines", "#B85D00", "off"),
-          L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75 }),
-          L("Р", "#E63D00", "dots", "#9E2A00", "off"),
         ],
       },
     ],
@@ -472,53 +433,6 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
           L("Ү", "#7C4DFF", "dots", "#4A2FA3", "on", { eyeY: 0.34, mouthY: 0.74 }),
           L("К", "#26C24A", "lines", "#12802D", "off"),
           L("І", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
-        ],
-      },
-    ],
-  },
-  {
-    letter: "Ф",
-    words: [
-      {
-        word: "ФИЗИКА",
-        emoji: "🔬",
-        letters: [
-          L("Ф", "#5E7BFF", "dots", "#2E45B3", "off"),
-          L("И", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
-          L("З", "#9C27B0", "dots", "#6A1B7A", "off"),
-          L("И", "#26C24A", "lines", "#12802D", "on", { eyeY: 0.34, mouthY: 0.72 }),
-          L("К", "#FF8A00", "lines", "#B85D00", "off"),
-          L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
-        ],
-      },
-    ],
-  },
-  {
-    letter: "Х",
-    words: [
-      {
-        word: "ХАТ",
-        emoji: "✉️",
-        letters: [
-          L("Х", "#607D8B", "dots", "#3D4F5C", "off"),
-          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
-          L("Т", "#FF6B2C", "lines", "#B74711", "off"),
-        ],
-      },
-    ],
-  },
-  {
-    letter: "Һ",
-    words: [
-      {
-        word: "ЖИҺАЗ",
-        emoji: "🪑",
-        letters: [
-          L("Ж", "#FF8A00", "lines", "#B85D00", "on", { eyeY: 0.44, mouthY: 0.73, eyeLX: 0.31, eyeRX: 0.69 }),
-          L("И", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
-          L("Һ", "#8D6E63", "lines", "#5D4037", "off"),
-          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
-          L("З", "#9C27B0", "dots", "#6A1B7A", "off"),
         ],
       },
     ],

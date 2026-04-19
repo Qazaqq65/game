@@ -13,13 +13,26 @@ import type {
   WordDef,
   LetterDef,
 } from "../types";
-import type { ShellContentInsets } from "../utils/canvas";
+import type { ShellContentInsets, SlotArcOptions } from "../utils/canvas";
 import {
   computeSlotPositions,
   computeScatterPositions,
   shuffleArray,
   clampTileTopLeft,
 } from "../utils/canvas";
+
+/** АРЫСТАН, ЗЫМЫРАН: буквалар жақын, дуга күштірек (бір стиль). */
+const COMPACT_ARC_WORDS = new Set(["АРЫСТАН", "ЗЫМЫРАН"]);
+
+function slotLayoutForWord(word: string): {
+  gapX: number;
+  arcOpts: SlotArcOptions | undefined;
+} {
+  if (COMPACT_ARC_WORDS.has(word.trim().toUpperCase())) {
+    return { gapX: 0, arcOpts: { arcLiftScale: 1.72 } };
+  }
+  return { gapX: 10, arcOpts: undefined };
+}
 
 /** Дәл шетінде 0, ортасына жақындағанда үдемелі тарту — секірмелі «магнит» жоқ */
 const MAGNET_ZONE_PX = 20;
@@ -217,7 +230,9 @@ function relayoutPreserveProgress(
   newH: number,
   newTileSize: number,
   letterCount: number,
-  contentInsets: ShellContentInsets | null
+  contentInsets: ShellContentInsets | null,
+  gapX: number,
+  arcOpts?: SlotArcOptions | null
 ): { slots: SlotPosition[]; tiles: TileState[] } {
   const n = letterCount;
   const newSlots = computeSlotPositions(
@@ -225,8 +240,9 @@ function relayoutPreserveProgress(
     newW,
     newH,
     newTileSize,
-    10,
-    contentInsets
+    gapX,
+    contentInsets,
+    arcOpts
   );
   const scaleX = prevW > 0 ? newW / prevW : 1;
   const scaleY = prevH > 0 ? newH / prevH : 1;
@@ -490,13 +506,15 @@ export function usePuzzle({
     const n = word.letters.length;
     const insets = shellContentInsets;
 
+    const { gapX, arcOpts } = slotLayoutForWord(word.word);
     const newSlots = computeSlotPositions(
       n,
       containerW,
       containerH,
       tileSize,
-      10,
-      insets
+      gapX,
+      insets,
+      arcOpts
     );
     const scattered = computeScatterPositions(
       n,
@@ -569,6 +587,7 @@ export function usePuzzle({
       return;
     }
 
+    const { gapX: gx, arcOpts: ao } = slotLayoutForWord(word.word);
     const { slots: ns, tiles: nt } = relayoutPreserveProgress(
       prevTiles,
       prev.w,
@@ -578,7 +597,9 @@ export function usePuzzle({
       containerH,
       tileSize,
       word.letters.length,
-      shellContentInsets ?? null
+      shellContentInsets ?? null,
+      gx,
+      ao
     );
     setSlots(ns);
     setTiles(nt);

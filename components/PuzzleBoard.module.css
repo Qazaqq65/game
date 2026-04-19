@@ -1,5 +1,13 @@
 /* Тақта толық фон, түймелер үстінде */
 .shell {
+  /* Үй / Артқа / Алға — жұмсақ акценттер, менюмен үйлесім */
+  --nav-home-a: color-mix(in srgb, #9b8fc8 14%, var(--game-anchor-highlight));
+  --nav-home-b: color-mix(in srgb, #c9a882 18%, var(--game-anchor-raised));
+  --nav-back-a: color-mix(in srgb, #5a968a 12%, #fffefb);
+  --nav-back-b: color-mix(in srgb, #5a968a 22%, #e4ebe9);
+  --nav-next-a: color-mix(in srgb, #e07a52 10%, #fffefb);
+  --nav-next-b: color-mix(in srgb, #e07a52 24%, #f2e4d8);
+
   position: relative;
   width: 100%;
   max-width: 100%;
@@ -172,69 +180,125 @@
 .homeBtn {
   min-width: 44px;
   min-height: 44px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   font-size: clamp(0.85rem, 3vw, 0.95rem);
   font-weight: 800;
   font-family: var(--font-display-kz);
-  color: var(--game-anchor-ink);
-  background: linear-gradient(
-    180deg,
-    var(--game-anchor-highlight) 0%,
-    var(--game-anchor-raised) 100%
-  );
-  border: 1px solid var(--game-anchor-border);
-  border-radius: 12px;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, #6b5a8c 18%, var(--game-anchor-ink));
+  background: linear-gradient(168deg, var(--nav-home-a) 0%, var(--nav-home-b) 100%);
+  border: 1px solid color-mix(in srgb, #9b8fc8 22%, var(--game-anchor-border));
+  border-radius: 999px;
   cursor: pointer;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 3px 0 rgba(120, 95, 75, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 color-mix(in srgb, #9b8fc8 8%, rgba(90, 70, 55, 0.06)),
+    0 2px 0 color-mix(in srgb, #c9a882 14%, rgba(100, 80, 65, 0.12)),
+    0 8px 18px rgba(60, 48, 38, 0.08);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
 
 .toolBtn {
   min-height: 44px;
   min-width: min(44%, 160px);
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: clamp(0.78rem, 2.8vw, 0.9rem);
   font-weight: 800;
   font-family: var(--font-display-kz);
-  color: var(--game-anchor-ink);
-  background: linear-gradient(
-    180deg,
-    var(--game-anchor-highlight) 0%,
-    var(--game-anchor-raised) 100%
-  );
-  border: 1px solid var(--game-anchor-border);
-  border-radius: 12px;
+  letter-spacing: 0.02em;
+  border-radius: 14px;
   cursor: pointer;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 3px 0 rgba(120, 95, 75, 0.16);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
   line-height: 1.2;
+}
+
+.toolBtnBack {
+  color: color-mix(in srgb, #3d6b62 12%, var(--game-anchor-ink));
+  background: linear-gradient(175deg, var(--nav-back-a) 0%, var(--nav-back-b) 100%);
+  border: 1px solid color-mix(in srgb, #5a968a 28%, var(--game-anchor-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 color-mix(in srgb, #5a968a 10%, rgba(90, 70, 55, 0.05)),
+    0 2px 0 color-mix(in srgb, #5a968a 16%, rgba(100, 80, 65, 0.11)),
+    0 8px 18px rgba(60, 48, 38, 0.07);
+}
+
+.toolBtnNext {
+  color: color-mix(in srgb, #b85a38 10%, var(--game-anchor-ink));
+  background: linear-gradient(175deg, var(--nav-next-a) 0%, var(--nav-next-b) 100%);
+  border: 1px solid color-mix(in srgb, #e07a52 26%, var(--game-anchor-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 color-mix(in srgb, #e07a52 8%, rgba(90, 70, 55, 0.05)),
+    0 2px 0 color-mix(in srgb, #e07a52 14%, rgba(100, 80, 65, 0.12)),
+    0 8px 18px color-mix(in srgb, #e07a52 6%, rgba(60, 48, 38, 0.08));
 }
 
 .toolBtn:active,
 .homeBtn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.toolBtnBack:active {
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, #5a968a 12%, rgba(90, 70, 55, 0.1)),
+    0 1px 0 rgba(100, 80, 65, 0.08);
+}
+
+.toolBtnNext:active {
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, #e07a52 10%, rgba(90, 70, 55, 0.1)),
+    0 1px 0 rgba(100, 80, 65, 0.08);
+}
+
+.homeBtn:active {
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, #9b8fc8 10%, rgba(90, 70, 55, 0.1)),
+    0 1px 0 rgba(100, 80, 65, 0.08);
 }
 
 @media (hover: hover) {
-  .toolBtn:hover,
   .homeBtn:hover {
+    border-color: color-mix(in srgb, #9b8fc8 38%, var(--game-anchor-border));
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 1) inset,
-      0 4px 10px rgba(80, 60, 45, 0.12);
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      0 3px 0 color-mix(in srgb, #c9a882 18%, rgba(100, 80, 65, 0.13)),
+      0 10px 22px rgba(60, 48, 38, 0.1);
   }
+
+  .toolBtnBack:hover {
+    border-color: color-mix(in srgb, #5a968a 42%, var(--game-anchor-border));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 3px 0 color-mix(in srgb, #5a968a 20%, rgba(100, 80, 65, 0.12)),
+      0 10px 22px rgba(60, 48, 38, 0.09);
+  }
+
+  .toolBtnNext:hover {
+    border-color: color-mix(in srgb, #e07a52 45%, var(--game-anchor-border));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      0 3px 0 color-mix(in srgb, #e07a52 20%, rgba(100, 80, 65, 0.13)),
+      0 10px 22px color-mix(in srgb, #e07a52 8%, rgba(60, 48, 38, 0.1));
+  }
+}
+
+.homeBtn:focus-visible,
+.toolBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, #e07a52 45%, #5a968a);
+  outline-offset: 3px;
 }
 
 @media (orientation: landscape) and (max-height: 460px) {

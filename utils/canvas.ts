@@ -144,13 +144,19 @@ export type ShellContentInsets = {
   bottom: number;
 };
 
+/** Тік экрандағы дуга (∩) үшін: arcLiftScale > 1 — орталық әріптер жоғары көтеріледі. */
+export type SlotArcOptions = {
+  arcLiftScale?: number;
+};
+
 export function computeSlotPositions(
   count: number,
   containerW: number,
   containerH: number,
   tileSize: number,
   gapX = 10,
-  contentInsets?: ShellContentInsets | null
+  contentInsets?: ShellContentInsets | null,
+  arcOpts?: SlotArcOptions | null
 ): SlotPosition[] {
   const it = contentInsets?.top ?? 0;
   const ib = contentInsets?.bottom ?? 0;
@@ -170,10 +176,10 @@ export function computeSlotPositions(
     }));
   }
 
-  const maxLift = Math.min(
-    36,
-    Math.max(16, Math.round(innerH * 0.07)),
-  );
+  const scale = arcOpts?.arcLiftScale ?? 1;
+  let maxLift =
+    Math.min(36, Math.max(16, Math.round(innerH * 0.07))) * scale;
+  maxLift = Math.min(maxLift, Math.round(innerH * 0.2));
   const mid = (count - 1) / 2;
 
   return Array.from({ length: count }, (_, i) => {

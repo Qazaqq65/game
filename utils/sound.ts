@@ -51,13 +51,15 @@ export function stopSound() {
   }
 }
 
-const APPLE_WIN_SRC = "/music/apple.mp3";
-let appleWinMusic: Howl | null = null;
+const winCelebrationHowls = new Map<string, Howl>();
+let activeWinCelebrationHowl: Howl | null = null;
 
-function getAppleWinMusic(): Howl {
-  if (!appleWinMusic) {
-    appleWinMusic = new Howl({
-      src: [APPLE_WIN_SRC],
+function getWinCelebrationHowl(filename: string): Howl {
+  let h = winCelebrationHowls.get(filename);
+  if (!h) {
+    const src = `/music/${encodeURIComponent(filename)}`;
+    h = new Howl({
+      src: [src],
       volume: 0.62,
       preload: true,
       html5: false,
@@ -65,31 +67,48 @@ function getAppleWinMusic(): Howl {
       onloaderror: () => {
         if (import.meta.env.DEV) {
           console.warn(
-            `[sound] не загрузилась музыка жеңіс: ${APPLE_WIN_SRC} — қой public/music/apple.mp3`
+            `[sound] не загрузилась музыка жеңіс: ${src} — қой public/music/${filename}`
           );
         }
       },
     });
+    winCelebrationHowls.set(filename, h);
   }
-  return appleWinMusic;
+  return h;
 }
 
-/** Жеңіс экраны «АЛМА» — бір рет ойнайды (цикл жоқ), тыныш даңғыл */
-export function startAppleWinMusic(onEnded?: () => void) {
+/** Жеңіс парады үшін mp3 (public/music/), бір рет, цикл жоқ */
+export function startWinCelebrationMusic(
+  filename: string | undefined | null,
+  onEnded?: () => void
+) {
   unlockAudio();
   stopSound();
-  const h = getAppleWinMusic();
+  stopWinCelebrationMusic();
+  if (!filename) return;
+  const h = getWinCelebrationHowl(filename);
   h.off("end");
   h.stop();
+  activeWinCelebrationHowl = h;
   if (onEnded) {
     h.once("end", onEnded);
   }
   h.play();
 }
 
-export function stopAppleWinMusic() {
-  if (appleWinMusic) {
-    appleWinMusic.off("end");
-    appleWinMusic.stop();
+export function stopWinCelebrationMusic() {
+  if (activeWinCelebrationHowl) {
+    activeWinCelebrationHowl.off("end");
+    activeWinCelebrationHowl.stop();
+    activeWinCelebrationHowl = null;
   }
+}
+
+/** Жеңіс экраны «АЛМА» — бір рет ойнайды (цикл жоқ), тыныш даңғыл */
+export function startAppleWinMusic(onEnded?: () => void) {
+  startWinCelebrationMusic("apple.mp3", onEnded);
+}
+
+export function stopAppleWinMusic() {
+  stopWinCelebrationMusic();
 }

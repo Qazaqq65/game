@@ -381,7 +381,7 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
             <div
               ref={trackRef}
               className={styles.track}
-              role="listbox"
+              role="group"
               aria-label="Сөздер"
             >
             {flatItems.map((item, i) => (
@@ -393,8 +393,8 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
                 type="button"
                 className={styles.card}
                 data-letter={item.startsWithLetter}
+                data-word={item.word.word}
                 data-index={i}
-                role="option"
                 aria-label={`${item.word.word}, ${item.word.emoji}`}
                 initial={
                   snappyMenu
@@ -424,6 +424,19 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
                 </span>
               </motion.button>
             ))}
+            <div
+              className={`${styles.card} ${styles.cardComingSoon}`}
+              role="note"
+              aria-label="Келесі сөздер жасалып жатыр. Жақында қосылады."
+            >
+              <span className={styles.cardInner}>
+                <span className={styles.cardComingSoonText}>
+                  Келесі сөздер жасалып жатыр
+                  <br />
+                  Жақында қосылады
+                </span>
+              </span>
+            </div>
             </div>
             <button
               type="button"

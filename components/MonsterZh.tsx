@@ -152,6 +152,7 @@ export function MonsterZh({
             cy={eyeY}
             rx={eyeRx}
             ry={eyeRy}
+            initial={{ ry: eyeRy }}
             animate={{
               ry: isDragging
                 ? eyeRy
@@ -175,6 +176,7 @@ export function MonsterZh({
             cy={eyeY}
             rx={eyeRx}
             ry={eyeRy}
+            initial={{ ry: eyeRy }}
             animate={{
               ry: isDragging
                 ? eyeRy
@@ -197,6 +199,7 @@ export function MonsterZh({
           <motion.circle
             cx={eyeLX}
             cy={eyeY + pupilOffY}
+            initial={{ cy: eyeY + pupilOffY }}
             animate={{ cy: eyeY + pupilOffY }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             r={pupilR}
@@ -205,6 +208,7 @@ export function MonsterZh({
           <motion.circle
             cx={eyeRX}
             cy={eyeY + pupilOffY}
+            initial={{ cy: eyeY + pupilOffY }}
             animate={{ cy: eyeY + pupilOffY }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             r={pupilR}
@@ -213,6 +217,7 @@ export function MonsterZh({
 
           <motion.path
             d={currentMouth}
+            initial={{ d: currentMouth }}
             animate={{ d: currentMouth }}
             transition={
               isDragging

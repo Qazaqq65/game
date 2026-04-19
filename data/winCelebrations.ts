@@ -11,25 +11,37 @@ export interface WinCelebrationDef {
   followUpLottieFiles?: string[];
   /** public/lottie/ ішіндегі mp4 файл атауы. */
   videoFile?: string;
+  /** public/music/ ішіндегі mp3 (мысалы apple.mp3). */
+  musicFile?: string;
   /** Ку сындырып қашады — арыстанның алдында жүгіреді. */
   chaseLizardFile?: string;
   scene: WinCelebrationScene;
   /** Қосымша позиция/өлшем түрлендірулері үшін визуал нұсқа. */
-  actorVariant?: "virus" | "flower" | "rocket" | "dogpair";
+  actorVariant?: "virus" | "flower" | "rocket" | "dogpair" | "dopStaticMoving";
   /** Қысқа реңк хабарламасы (қалағанда бос). */
   tagline?: string;
+  /** savanna: алмадағыдай жасыл рамка ішінде, бірақ ку қуған парад анимациясы. */
+  framedChase?: boolean;
+  /** Авто «Келесі сөз» уақытына қосу (теріс — қысқарту), мс. Тек қажетті сөздерде. */
+  winAutoAdvanceDeltaMs?: number;
 }
 
 export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
   АЛМА: {
     lottieFile: "Apple Workout.json",
     scene: "apple",
+    musicFile: "apple.mp3",
     tagline: "Алма сахнаға шықты!",
+    winAutoAdvanceDeltaMs: 1000,
   },
   АРЫСТАН: {
     lottieFile: "Lion Running.json",
-    scene: "apple",
+    scene: "savanna",
+    chaseLizardFile: "Lizard running Lottie Animation.json",
+    framedChase: true,
+    musicFile: "Lionmusic.mp3",
     tagline: "Арыстан жүгіріп келеді!",
+    winAutoAdvanceDeltaMs: -6000,
   },
   БАЛА: {
     videoFile: "child.mp4",
@@ -41,6 +53,7 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     followUpLottieFiles: ["Covid elimination.json", "Hand Sanitizer.json"],
     scene: "apple",
     actorVariant: "virus",
+    musicFile: "covid.mp3",
     tagline: "COVID19 -> elimination -> sanitizer",
   },
   ГҮЛ: {
@@ -50,8 +63,12 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     tagline: "Гүл жайқалып тұр!",
   },
   ДОП: {
+    /** ball.json тұрады, ball2.json парадпен қана қозғалады. */
     lottieFile: "ball.json",
-    scene: "apple",
+    chaseLizardFile: "ball2.json",
+    scene: "savanna",
+    framedChase: true,
+    actorVariant: "dopStaticMoving",
     tagline: "Доп секіріп тұр!",
   },
   ЗЫМЫРАН: {

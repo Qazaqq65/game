@@ -9,6 +9,10 @@ import {
   type WinCelebrationDef,
 } from "../data/winCelebrations";
 import styles from "./WinScreen.module.css";
+import {
+  startWinCelebrationMusic,
+  stopWinCelebrationMusic,
+} from "../utils/sound";
 
 interface WinScreenProps {
   word: string;
@@ -95,6 +99,7 @@ function WinCelebrationScene({
   followUpData,
   virusFrameIndex,
   showDogPartner,
+  framedChase,
 }: {
   scene: WinCelebrationDef["scene"];
   lionData: object | null;
@@ -104,6 +109,7 @@ function WinCelebrationScene({
   followUpData: object[];
   virusFrameIndex: number;
   showDogPartner: boolean;
+  framedChase: boolean;
 }) {
   if (scene === "apple" && lionData) {
     if (actorVariant === "dogpair") {
@@ -179,6 +185,72 @@ function WinCelebrationScene({
   }
 
   if (!lionData) return null;
+
+  if (scene === "savanna" && framedChase) {
+    if (actorVariant === "dopStaticMoving" && lionData) {
+      return (
+        <div className={styles.celebrationBackdrop} aria-hidden>
+          <div className={styles.appleScene} />
+          <div className={styles.appleWarmWash} />
+          <div className={styles.appleGlow} />
+          <div className={styles.appleCenterStage}>
+            <div className={`${styles.appleMatte} ${styles.appleMatteFramedParade}`}>
+              <div className={styles.appleFrameChaseClip}>
+                <div className={styles.appleFrameChaseGround} aria-hidden />
+                <div className={styles.appleFrameBallStatic}>
+                  <CelebrationLottieView
+                    data={lionData}
+                    lottieClassName={styles.lottieBallStaticFramed}
+                  />
+                </div>
+                {lizardData ? (
+                  <div className={styles.chaseParadeFramed}>
+                    <CelebrationLottieView
+                      data={lizardData}
+                      lottieClassName={styles.lottieBallFramed}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const chaseInner = lizardData ? (
+      <div className={styles.chasePair}>
+        <CelebrationLottieView
+          data={lionData}
+          lottieClassName={`${styles.lottieLion} ${styles.lottieLionFramed}`}
+        />
+        <CelebrationLottieView
+          data={lizardData}
+          lottieClassName={`${styles.lottieLizard} ${styles.lottieLizardFramed}`}
+        />
+      </div>
+    ) : (
+      <CelebrationLottieView
+        data={lionData}
+        lottieClassName={`${styles.lottieLion} ${styles.lottieLionFramed}`}
+      />
+    );
+    return (
+      <div className={styles.celebrationBackdrop} aria-hidden>
+        <div className={styles.appleScene} />
+        <div className={styles.appleWarmWash} />
+        <div className={styles.appleGlow} />
+        <div className={styles.appleCenterStage}>
+          <div className={`${styles.appleMatte} ${styles.appleMatteFramedParade}`}>
+            <div className={styles.appleFrameChaseClip}>
+              <div className={styles.appleFrameChaseGround} aria-hidden />
+              <div className={styles.chaseParadeFramed}>{chaseInner}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.celebrationBackdrop} aria-hidden>
@@ -287,6 +359,17 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
     !isLowEnd &&
     (celebration.scene === "child" ? childVideoUrl != null : lionData != null);
 
+  useEffect(() => {
+    if (!showParade || !celebration?.musicFile) {
+      stopWinCelebrationMusic();
+      return;
+    }
+    startWinCelebrationMusic(celebration.musicFile);
+    return () => {
+      stopWinCelebrationMusic();
+    };
+  }, [showParade, celebration]);
+
   const onNextRef = useRef(onNext);
   onNextRef.current = onNext;
 
@@ -334,12 +417,13 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
           : celebration.actorVariant === "rocket"
             ? ROCKET_EXTRA_HOLD_MS
           : 0;
+    const advanceDelta = celebration.winAutoAdvanceDeltaMs ?? 0;
     let cancelled = false;
     const t = window.setTimeout(() => {
       if (!cancelled) {
         onNextRef.current();
       }
-    }, WIN_ENTRANCE_MS + sequenceExtraMs + AFTER_WIN_PAUSE_MS);
+    }, WIN_ENTRANCE_MS + sequenceExtraMs + AFTER_WIN_PAUSE_MS + advanceDelta);
 
     return () => {
       cancelled = true;
@@ -352,12 +436,13 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
       return;
     }
 
+    const advanceDelta = celebration.winAutoAdvanceDeltaMs ?? 0;
     let cancelled = false;
     const t = window.setTimeout(() => {
       if (!cancelled) {
         onNextRef.current();
       }
-    }, WIN_ENTRANCE_MS + SAVANNA_PARADE_LOOP_MS + AFTER_WIN_PAUSE_MS);
+    }, WIN_ENTRANCE_MS + SAVANNA_PARADE_LOOP_MS + AFTER_WIN_PAUSE_MS + advanceDelta);
 
     return () => {
       cancelled = true;
@@ -404,6 +489,7 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
           followUpData={followUpData}
           virusFrameIndex={virusFrameIndex}
           showDogPartner={showDogPartner}
+          framedChase={celebration.framedChase === true}
         />
       ) : null}
 
@@ -411,8 +497,9 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
         type="button"
         className={`${styles.nextButton} ${styles.nextButtonCorner}`}
         onClick={onNext}
+        aria-label="Алға, келесі сөз"
       >
-        Келесі сөз →
+        Алға →
       </button>
     </div>,
     document.body

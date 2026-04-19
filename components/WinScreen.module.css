@@ -46,6 +46,8 @@
 
 .rootParade {
   background: transparent;
+  /* Парад бойы персонаждар экран шетіне шығып тұруы мүмкін */
+  overflow-x: visible;
 }
 
 .celebrationBackdrop {
@@ -115,23 +117,9 @@
   bottom: min(20vh, 180px);
   height: min(40%, 300px);
   z-index: 2;
-  overflow: hidden;
+  /* Персонаждар тректан тысқа шығып көрінсін — кесіртке мен арыстан кесілмесін */
+  overflow: visible;
   pointer-events: none;
-  /* Толық ені бойынша көрінеді — шеттерде өте жеңіл жұмсарту */
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    black 0.8%,
-    black 99.2%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    black 0.8%,
-    black 99.2%,
-    transparent 100%
-  );
 }
 
 /* Төбелер + қызыл қоныр топырақ — лев пен кесірткенің астында */
@@ -291,6 +279,116 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
+/* Алмадағыдай жасыл рамка, ішінде савана жолындағы ку қуған парад */
+.appleMatteFramedParade {
+  padding: min(12px, 2vmin) min(10px, 2vmin);
+  max-width: min(960px, 98vw);
+}
+
+.appleFrameChaseClip {
+  position: relative;
+  container-type: inline-size;
+  width: min(880px, 94vw);
+  min-height: min(420px, 55vh);
+  height: min(520px, 62vh);
+  overflow: hidden;
+  border-radius: clamp(12px, 2.4vmin, 18px);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(110, 196, 232, 0.28) 0%,
+      rgba(197, 232, 240, 0.18) 22%,
+      rgba(232, 212, 168, 0.32) 55%,
+      rgba(107, 68, 35, 0.12) 100%
+    );
+}
+
+/* ДОП: тұрақты ball.json — парадқа қосылмайды */
+.appleFrameBallStatic {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: min(48%, 280px);
+  max-width: 55cqw;
+}
+
+.lottieBallStaticFramed {
+  height: min(340px, 48vh) !important;
+  width: auto !important;
+  max-width: min(400px, 90cqw) !important;
+  margin: 0 !important;
+}
+
+.appleFrameChaseGround {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 42% 70% at 9% 88%, rgba(34, 48, 26, 0.38) 0%, transparent 62%),
+    radial-gradient(ellipse 28% 50% at 16% 92%, rgba(28, 40, 22, 0.28) 0%, transparent 58%),
+    linear-gradient(to top, rgba(52, 36, 20, 0.2) 0%, transparent 28%),
+    radial-gradient(ellipse 130% 52% at 50% 112%, rgba(44, 30, 16, 0.5) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 40% at 14% 106%, rgba(38, 26, 14, 0.38) 0%, transparent 54%),
+    radial-gradient(ellipse 52% 38% at 90% 107%, rgba(38, 26, 14, 0.35) 0%, transparent 52%);
+}
+
+.chaseParadeFramed {
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  z-index: 3;
+  width: max-content;
+  height: 92%;
+  display: flex;
+  align-items: flex-end;
+  will-change: transform;
+  animation: winChaseParadeFramed 6.2s linear infinite;
+}
+
+.appleMatteFramedParade .lottieMount {
+  height: 100%;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.lottieLionFramed {
+  height: min(450px, 54vh) !important;
+  width: auto !important;
+  max-width: min(600px, 92cqw) !important;
+  margin: 0 !important;
+}
+
+.lottieLizardFramed {
+  height: min(510px, 60vh) !important;
+  width: auto !important;
+  max-width: min(690px, 100cqw) !important;
+  margin: 0 !important;
+}
+
+/* ДОП: қозғалатын ball2.json (парад) */
+.lottieBallFramed {
+  height: min(450px, 54vh) !important;
+  width: auto !important;
+  max-width: min(520px, 78cqw) !important;
+  margin: 0 !important;
+}
+
+@keyframes winChaseParadeFramed {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(calc(100cqw + 100%));
+  }
+}
+
 .appleMatteTransparent {
   padding: 0;
   background: transparent;
@@ -444,6 +542,31 @@
     height: min(320px, 56vh) !important;
     max-width: min(420px, 92vw) !important;
   }
+
+  .appleFrameChaseClip {
+    min-height: min(340px, 48vh);
+    height: min(400px, 52vh);
+  }
+
+  .lottieLionFramed {
+    height: min(330px, 44vh) !important;
+    max-width: min(450px, 88cqw) !important;
+  }
+
+  .lottieLizardFramed {
+    height: min(375px, 50vh) !important;
+    max-width: min(510px, 96cqw) !important;
+  }
+
+  .lottieBallFramed {
+    height: min(330px, 44vh) !important;
+    max-width: min(400px, 80cqw) !important;
+  }
+
+  .lottieBallStaticFramed {
+    height: min(250px, 38vh) !important;
+    max-width: min(300px, 82cqw) !important;
+  }
 }
 
 /* Телефон көлденең: түйме кішірек, арыстан ірірек */
@@ -482,6 +605,31 @@
     height: min(250px, 62vh) !important;
     max-width: min(360px, 84vw) !important;
   }
+
+  .appleFrameChaseClip {
+    min-height: min(300px, 52vh);
+    height: min(360px, 58vh);
+  }
+
+  .lottieLionFramed {
+    height: min(390px, 50vh) !important;
+    max-width: min(540px, 90cqw) !important;
+  }
+
+  .lottieLizardFramed {
+    height: min(444px, 56vh) !important;
+    max-width: min(600px, 98cqw) !important;
+  }
+
+  .lottieBallFramed {
+    height: min(390px, 50vh) !important;
+    max-width: min(480px, 88cqw) !important;
+  }
+
+  .lottieBallStaticFramed {
+    height: min(300px, 46vh) !important;
+    max-width: min(360px, 85cqw) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -500,6 +648,11 @@
   .chaseParade {
     animation: none;
     transform: translateX(calc(42vw - 50%));
+  }
+
+  .chaseParadeFramed {
+    animation: none;
+    transform: translateX(calc(50cqw - 50%));
   }
 
   .sceneSavanna::before {
