@@ -42,7 +42,14 @@ export interface LetterDef {
 export interface WordDef {
   word: string;
   emoji: string;
+  /** Optional SVG path from /public (e.g. "/svg/rooster.svg") — shown instead of emoji in menu cards */
+  svgSrc?: string;
   letters: LetterDef[];
+  /**
+   * Сөздің mp3 дыбысы public/sounds/ ішінде бар-жоғын белгілейді.
+   * Файл атауы — сөздің бірінші әрпі бас, қалғаны — кіші (мысалы "Алма.MP3").
+   */
+  voiced?: boolean;
 }
 
 export interface TileState {

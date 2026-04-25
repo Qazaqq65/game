@@ -14,6 +14,10 @@ interface DraggableTileProps {
   size: number;
   isDragging: boolean;
   isLowEnd: boolean;
+  /** Жеңіс кезінде «оқу толқыны» — буква сәл жоғары секіреді, кезектесіп. */
+  readingWave?: boolean;
+  /** Көршілес буквалар арасындағы стаггер (мс). */
+  readingWaveStepMs?: number;
   onPointerDown: (
     e: React.PointerEvent<HTMLDivElement>,
     tileIndex: number
@@ -31,6 +35,8 @@ function DraggableTileInner({
   size,
   isDragging,
   isLowEnd,
+  readingWave = false,
+  readingWaveStepMs = 230,
   onPointerDown,
   onPointerMove,
   onPointerEnd,
@@ -55,6 +61,15 @@ function DraggableTileInner({
         ? "near"
         : "idle";
 
+  const wavePlay =
+    readingWave && tile.snapped && tile.atSlot != null && !isDragging;
+  const innerClass = wavePlay
+    ? `${styles.readingWaveInner} ${styles.readingWaveActive}`
+    : styles.readingWaveInner;
+  const innerStyle: React.CSSProperties | undefined = wavePlay
+    ? { animationDelay: `${(tile.atSlot ?? 0) * readingWaveStepMs}ms` }
+    : undefined;
+
   return (
     <div
       className={`${styles.tile} ${stateClass} ${nearTargetClass}`}
@@ -73,19 +88,21 @@ function DraggableTileInner({
         transition,
       }}
     >
-      {isDragging ? (
-        <LetterDragGlyph letter={letter} size={size} />
-      ) : (
-        <Letter
-          letter={letter}
-          size={size}
-          isDragging={false}
-          isHovered={tile.isNearTarget}
-          isSnapped={tile.snapped}
-          animState={animState}
-          isLowEnd={isLowEnd}
-        />
-      )}
+      <div className={innerClass} style={innerStyle}>
+        {isDragging ? (
+          <LetterDragGlyph letter={letter} size={size} />
+        ) : (
+          <Letter
+            letter={letter}
+            size={size}
+            isDragging={false}
+            isHovered={tile.isNearTarget}
+            isSnapped={tile.snapped}
+            animState={animState}
+            isLowEnd={isLowEnd}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -101,6 +118,8 @@ export const DraggableTile = memo(
     a.isLowEnd === b.isLowEnd &&
     a.size === b.size &&
     a.letter === b.letter &&
+    a.readingWave === b.readingWave &&
+    a.readingWaveStepMs === b.readingWaveStepMs &&
     a.onPointerDown === b.onPointerDown &&
     a.onPointerMove === b.onPointerMove &&
     a.onPointerEnd === b.onPointerEnd

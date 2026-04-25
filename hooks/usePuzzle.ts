@@ -1,5 +1,10 @@
 import React from "react";
-import { startSound, stopSound } from "../utils/sound";
+import {
+  playWordPronunciation,
+  startSound,
+  stopSound,
+  stopWordPronunciation,
+} from "../utils/sound";
 import {
   useState,
   useRef,
@@ -23,6 +28,25 @@ import {
 
 /** АРЫСТАН, ЗЫМЫРАН: буквалар жақын, дуга күштірек (бір стиль). */
 const COMPACT_ARC_WORDS = new Set(["АРЫСТАН", "ЗЫМЫРАН"]);
+
+// ── Жеңіс «оқу толқыны» (reading wave) таймині ─────────────────────
+// Сөз жиналған соң, дыбыс басталар алдында толқын кезек-кезек ағады:
+// әр буква WAVE_STEP_MS-тен кейін секіреді, өзі ~720мс анимацияланады
+// (DraggableTile.module.css → .readingWaveActive).
+const WAVE_STEP_MS = 230;
+const WAVE_LETTER_MS = 720;
+/** Соңғы буква секіріп болған соң WinScreen ашылғанға дейінгі қысқа кідіріс. */
+const WAVE_TAIL_MS = 280;
+/** Snap анимациясы аяқталғанша күтеміз (≈SNAP_SETTLE_MS), сосын толқын/дыбыс. */
+const PRONOUNCE_LEAD_IN_MS = 480;
+/** Дыбыс бітті — WinScreen-ге өтер алдында «дем алу» паузасы. */
+const PRONOUNCE_TAIL_MS = 380;
+/** "end" оқиғасы шықпай қалса, бұдан кейін WinScreen-ге сөзсіз өтеміз. */
+const PRONOUNCE_FALLBACK_MS = 4500;
+
+function readingWaveDurationMs(letterCount: number): number {
+  return Math.max(0, letterCount - 1) * WAVE_STEP_MS + WAVE_LETTER_MS;
+}
 
 function slotLayoutForWord(word: string): {
   gapX: number;
@@ -384,6 +408,10 @@ interface UsePuzzleReturn {
   slots: SlotPosition[];
   dragIdx: number | null;
   won: boolean;
+  /** Жеңіс кезіндегі «оқу толқыны» белсенді ме (DraggableTile-ге беріледі). */
+  readingWave: boolean;
+  /** Көршілес буквалар арасындағы стаггер (мс). */
+  readingWaveStepMs: number;
   rootRef: React.RefObject<HTMLDivElement | null>;
   onTilePointerDown: (
     e: React.PointerEvent<HTMLDivElement>,
@@ -417,6 +445,7 @@ export function usePuzzle({
   const [slots, setSlots] = useState<SlotPosition[]>([]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [won, setWon] = useState(false);
+  const [readingWave, setReadingWave] = useState(false);
 
   const layoutDimsRef = useRef({ w: 0, h: 0, tile: 0 });
   const wordKeyRef = useRef<string | null>(null);
@@ -496,6 +525,9 @@ export function usePuzzle({
       if (dragAnimTickRef.current != null) {
         cancelAnimationFrame(dragAnimTickRef.current);
       }
+      // Сөз жиналып, оның дыбысы ойнап тұрғанда басқа сөзге/басты бетке
+      // көшсе — артық дыбыс қалмасын.
+      stopWordPronunciation();
     },
     []
   );
@@ -546,6 +578,7 @@ export function usePuzzle({
     tilesRef.current = newTiles;
 
     setWon(false);
+    setReadingWave(false);
     dragRef.current = null;
     setDragIdx(null);
     dragVisualFrameRef.current = null;
@@ -737,7 +770,37 @@ export function usePuzzle({
 
         if (checkPuzzleWin(next)) {
           onComplete?.(word.word);
-          setTimeout(() => setWon(true), 300);
+          stopSound();
+
+          let advanced = false;
+          const advance = () => {
+            if (advanced) return;
+            advanced = true;
+            setReadingWave(false);
+            setWon(true);
+          };
+
+          // 1) Соңғы әріп snap болғанда бірден қозғалмаймыз — snap анимациясы
+          //    тынышталғанша (≈SNAP_SETTLE_MS) кідіреміз.
+          // 2) Сосын: «оқу толқыны» қосылады (буквалар кезек-кезек секіреді)
+          //    + сөздің mp3 дыбысы (бар болса) бірге басталады.
+          // 3) Дыбыс/толқын аяқталған соң қысқа тыныс паузасы → WinScreen.
+          const n = word.letters.length;
+          const waveDur = readingWaveDurationMs(n);
+
+          setTimeout(() => {
+            setReadingWave(true);
+
+            const started = playWordPronunciation(word.word, () => {
+              setTimeout(advance, PRONOUNCE_TAIL_MS);
+            });
+            if (started) {
+              setTimeout(advance, PRONOUNCE_FALLBACK_MS);
+            } else {
+              // Дыбыс жоқ — кем дегенде толқын аяқталғанша күтеміз.
+              setTimeout(advance, waveDur + WAVE_TAIL_MS);
+            }
+          }, PRONOUNCE_LEAD_IN_MS);
         }
 
         return next;
@@ -1038,6 +1101,8 @@ export function usePuzzle({
     slots,
     dragIdx,
     won,
+    readingWave,
+    readingWaveStepMs: WAVE_STEP_MS,
     rootRef,
     onTilePointerDown,
     onTilePointerMove,

@@ -31,6 +31,49 @@
 }
 
 /*
+ * «Оқу толқыны» — сөз жиналған соң, әр буква кезекпен сәл жоғары секіріп,
+ * жылы көлеңке шашып алады. Тек GPU-friendly transform/filter қолданылады,
+ * React re-render жоқ — анимация толық CSS жағында (animation-delay арқылы
+ * стаггер).
+ */
+.readingWaveInner {
+  width: 100%;
+  height: 100%;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
+}
+
+.readingWaveActive {
+  animation: letterReadingWave 720ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  will-change: transform, filter;
+}
+
+@keyframes letterReadingWave {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: saturate(1) drop-shadow(0 0 0 transparent);
+  }
+  30% {
+    transform: translate3d(0, -14px, 0) scale(1.10);
+    filter: saturate(1.18) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.20));
+  }
+  60% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+    filter: saturate(1.06) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.10));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: saturate(1) drop-shadow(0 0 0 transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readingWaveActive {
+    animation: none;
+  }
+}
+
+/*
  * Drag glyph анимациялары (LetterDragGlyph.tsx).
  * Бұрын әр тасымалдау SVG ішінде <style>@keyframes</style> кіретін еді;
  * глобальды бір файлда — браузер бір рет таныйды, ререндерде дубль жоқ.

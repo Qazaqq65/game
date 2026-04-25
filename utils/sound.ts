@@ -51,6 +51,77 @@ export function stopSound() {
   }
 }
 
+// ── Сөздің толық дыбысталуы (public/sounds/Алма.MP3 т.б.) ────────────
+// Әріптер дыбысы (А.mp3, Б.mp3 …) `sounds` мапында, ал толық сөздің
+// дыбысы (Алма, Арыстан …) — осында. Файл атауы Capitalize:
+// "АЛМА" → "Алма.MP3"; .MP3 және .mp3 кеңейтімдерінің екеуі де
+// тексеріледі (production-да Linux case-sensitive болуы мүмкін).
+
+const wordPronunciationHowls = new Map<string, Howl>();
+let activeWordPronunciation: Howl | null = null;
+
+function wordPronunciationFileName(word: string): string {
+  const w = word.trim();
+  if (!w) return "";
+  return w.charAt(0) + w.slice(1).toLowerCase();
+}
+
+export function preloadWordPronunciations(words: string[]): void {
+  words.forEach(word => {
+    const key = word.trim().toUpperCase();
+    if (!key || wordPronunciationHowls.has(key)) return;
+    const fname = wordPronunciationFileName(word);
+    const encoded = encodeURIComponent(fname);
+    const h = new Howl({
+      src: [`/sounds/${encoded}.MP3`, `/sounds/${encoded}.mp3`],
+      format: ["mp3"],
+      volume: 1,
+      preload: true,
+      html5: false,
+      loop: false,
+      onloaderror: () => {
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[sound] жоқ сөз дыбысы: /sounds/${fname}.MP3 — файлды public/sounds/ ішіне қой (Capitalize: бірінші әріп бас, қалғаны кіші).`
+          );
+        }
+      },
+    });
+    wordPronunciationHowls.set(key, h);
+  });
+}
+
+/** true — егер дыбыс ойнатыла бастаса; false — файл жоқ/жүктелмеген. */
+export function playWordPronunciation(
+  word: string,
+  onEnded?: () => void
+): boolean {
+  const key = word.trim().toUpperCase();
+  const h = wordPronunciationHowls.get(key);
+  if (!h) return false;
+  // "loaded" күйде болмаса — ойнатпаймыз (404 болса state "unloaded" қалады).
+  if (h.state() !== "loaded") return false;
+
+  stopSound();
+  stopWordPronunciation();
+
+  activeWordPronunciation = h;
+  h.off("end");
+  if (onEnded) {
+    h.once("end", onEnded);
+  }
+  h.play();
+  return true;
+}
+
+export function stopWordPronunciation(): void {
+  if (activeWordPronunciation) {
+    activeWordPronunciation.off("end");
+    activeWordPronunciation.stop();
+    activeWordPronunciation = null;
+  }
+}
+
 const winCelebrationHowls = new Map<string, Howl>();
 let activeWinCelebrationHowl: Howl | null = null;
 
@@ -84,6 +155,7 @@ export function startWinCelebrationMusic(
 ) {
   unlockAudio();
   stopSound();
+  stopWordPronunciation();
   stopWinCelebrationMusic();
   if (!filename) return;
   const h = getWinCelebrationHowl(filename);

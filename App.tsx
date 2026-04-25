@@ -7,13 +7,18 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { preloadSounds, unlockAudio } from "./utils/sound";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { auth } from "./firebase";
+import { preloadSounds, preloadWordPronunciations, unlockAudio } from "./utils/sound";
+import { isFullscreenSupported, toggleFullscreen, fullscreenElement } from "./utils/fullscreen";
 import { PuzzleBoard } from "./components/PuzzleBoard";
 import { EntryMenu } from "./components/EntryMenu";
+import LoginPage from "./components/LoginPage";
 import {
   WORDS,
   WORD_MENU_GROUPS,
   letterCharsFromWords,
+  voicedWordsFromWords,
 } from "./data/words";
 import { useBoardDimensions } from "./hooks/useBoardDimensions";
 import type { WordDef } from "./types";
@@ -60,6 +65,12 @@ function GameSession({
   setWordIdx: Dispatch<SetStateAction<number>>;
   onHome: () => void;
 }) {
+  // Android Chrome pull-to-refresh және iOS bounce эффектін өшіру
+  useEffect(() => {
+    const prevent = (e: TouchEvent) => e.preventDefault();
+    document.addEventListener("touchmove", prevent, { passive: false });
+    return () => document.removeEventListener("touchmove", prevent);
+  }, []);
   const currentWord: WordDef = WORDS[wordIdx % WORDS.length];
   const boardDims = useBoardDimensions(currentWord.letters.length);
   const n = WORDS.length;
@@ -98,6 +109,19 @@ export default function App() {
   const [entered, setEntered] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
   const [gameLandscapeShort, setGameLandscapeShort] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showAuthGate, setShowAuthGate] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isFs, setIsFs] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
 
   useLayoutEffect(() => {
     const sync = () => setGameLandscapeShort(readGameLandscapeShort());
@@ -115,6 +139,7 @@ export default function App() {
   useEffect(() => {
     const id = scheduleIdleWork(() => {
       preloadSounds([...letterCharsFromWords(WORDS), "snap", "win"]);
+      preloadWordPronunciations(voicedWordsFromWords(WORDS));
     });
 
     const unlock = () => {
@@ -127,6 +152,16 @@ export default function App() {
     return () => {
       cancelIdleWork(id);
       window.removeEventListener("pointerdown", unlock);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFs(!!fullscreenElement());
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
     };
   }, []);
 
@@ -143,10 +178,14 @@ export default function App() {
   const handleHome = useCallback(() => setEntered(false), []);
 
   const handlePickWord = useCallback((w: WordDef) => {
+    if (!currentUser) {
+      setShowAuthGate(true);
+      return;
+    }
     const i = WORDS.findIndex(x => x === w);
     setWordIdx(i >= 0 ? i : 0);
     setEntered(true);
-  }, []);
+  }, [currentUser]);
 
   /** Оптимизация: entered/wordIdx өзгермесе қайта есептелмейді. */
   const isAlmaSession = useMemo(
@@ -179,13 +218,76 @@ export default function App() {
       : "var(--game-anchor-soft)",
   }), [entered, gameLandscapeShort, isAlmaSession]);
 
+  if (authLoading) return null;
+
+  // Кнопка "Войти" → полноэкранный логин
+  if (showLogin) {
+    return (
+      <LoginPage
+        onBack={() => setShowLogin(false)}
+        onSuccess={() => setShowLogin(false)}
+      />
+    );
+  }
+
   return (
     <div style={rootStyle}>
-      {!entered ? (
-        <EntryMenu
-          groups={WORD_MENU_GROUPS}
-          onPickWord={handlePickWord}
+      {/* Клик по карточке без авторизации → модальный логин */}
+      {showAuthGate && (
+        <LoginPage
+          isModal
+          onBack={() => setShowAuthGate(false)}
+          onSuccess={() => setShowAuthGate(false)}
         />
+      )}
+
+      {!entered ? (
+        <>
+          <EntryMenu
+            groups={WORD_MENU_GROUPS}
+            onPickWord={handlePickWord}
+          />
+
+          <div style={{ position: "fixed", top: 14, right: 16, display: "flex", gap: 8, zIndex: 999 }}>
+            {isFullscreenSupported() && (
+              <button
+                onClick={() => toggleFullscreen()}
+                style={{
+                  padding: "7px 12px",
+                  fontSize: 16,
+                  borderRadius: 10,
+                  border: "none",
+                  background: "rgba(255,255,255,0.85)",
+                  backdropFilter: "blur(6px)",
+                  color: "#555",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                }}
+                title={isFs ? "Толық экраннан шығу" : "Толық экран"}
+              >
+                {isFs ? "↙↗" : "↗↙"}
+              </button>
+            )}
+            {!currentUser && (
+              <button
+                onClick={() => setShowLogin(true)}
+                style={{
+                  padding: "7px 18px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  border: "none",
+                  background: "#3b82f6",
+                  color: "#fff",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(59,130,246,0.35)",
+                }}
+              >
+                Кіру
+              </button>
+            )}
+          </div>
+        </>
       ) : (
         <div
           style={{

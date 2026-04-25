@@ -6,6 +6,21 @@ import {
   useCallback,
   useLayoutEffect,
 } from "react";
+
+function ArrowIcon({ dir }: { dir: "left" | "right" | "up" | "down" }) {
+  const rotateMap = { right: 0, down: 0, left: 180, up: 180 };
+  const src = dir === "up" || dir === "down" ? "/svg/down.svg" : "/svg/right.svg";
+  return (
+      <img
+      src={src}
+      alt={dir}
+      width={32}
+      height={32}
+      style={{ transform: `rotate(${rotateMap[dir]}deg)`, display: "block", transition: "transform 0.15s" }}
+      draggable={false}
+    />
+  );
+}
 import { motion } from "framer-motion";
 import type { WordDef } from "../types";
 import { useDeviceTier, type PerformanceMode } from "../hooks/useDeviceTier";
@@ -320,7 +335,7 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
               disabled={!filterScroll.canPrev}
               onClick={() => scrollFilterBy(-1)}
             >
-              ‹
+              <ArrowIcon dir="left" />
             </button>
             <nav
               ref={filterNavRef}
@@ -354,7 +369,7 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
               disabled={!filterScroll.canNext}
               onClick={() => scrollFilterBy(1)}
             >
-              ›
+              <ArrowIcon dir="right" />
             </button>
           </div>
         </div>
@@ -376,7 +391,7 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
               disabled={!trackScroll.canPrev}
               onClick={() => scrollTrackBy(-1)}
             >
-              {wordsVertical ? "∧" : "‹"}
+              <ArrowIcon dir={wordsVertical ? "up" : "left"} />
             </button>
             <div
               ref={trackRef}
@@ -418,7 +433,9 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
               >
                 <span className={styles.cardInner}>
                   <span className={styles.cardEmoji} aria-hidden>
-                    {item.word.emoji}
+                    {item.word.svgSrc
+                      ? <img src={item.word.svgSrc} alt={item.word.word} style={{ width: "1em", height: "1em", verticalAlign: "middle", objectFit: "contain" }} />
+                      : item.word.emoji}
                   </span>
                   <span className={styles.cardWord}>{item.word.word}</span>
                 </span>
@@ -447,7 +464,7 @@ export function EntryMenu({ groups, onPickWord }: EntryMenuProps) {
               disabled={!trackScroll.canNext}
               onClick={() => scrollTrackBy(1)}
             >
-              {wordsVertical ? "∨" : "›"}
+              <ArrowIcon dir={wordsVertical ? "down" : "right"} />
             </button>
           </div>
         </div>

@@ -27,6 +27,12 @@ export interface WinCelebrationDef {
 }
 
 export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
+  ӘТЕШ: {
+    lottieFile: "rooster.json",
+    scene: "apple",
+    musicFile: "rooster.mp3",
+    tagline: "Әтеш қызылды шақырады!",
+  },
   АЛМА: {
     lottieFile: "Apple Workout.json",
     scene: "apple",
@@ -57,7 +63,7 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     tagline: "COVID19 -> elimination -> sanitizer",
   },
   ГҮЛ: {
-    lottieFile: "Flowers.json",
+    lottieFile: "ColorFlower.json",
     scene: "apple",
     actorVariant: "flower",
     tagline: "Гүл жайқалып тұр!",
@@ -71,11 +77,21 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     actorVariant: "dopStaticMoving",
     tagline: "Доп секіріп тұр!",
   },
+  ЖЕР: {
+    lottieFile: "Earth.json",
+    scene: "apple",
+    tagline: "Жер шары айналып тұр!",
+  },
   ЗЫМЫРАН: {
     lottieFile: "roket 1.json",
     scene: "apple",
     actorVariant: "rocket",
     tagline: "Зымыран ұшып барады!",
+  },
+  ҚАР: {
+    lottieFile: "Snow.json",
+    scene: "apple",
+    tagline: "Қар жауып тұр!",
   },
   ИТ: {
     lottieFile: "dog1.json",
@@ -84,10 +100,20 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     actorVariant: "dogpair",
     tagline: "Екі ит ойнап жүр!",
   },
+  ЛИМОН: {
+    lottieFile: "Lemon.json",
+    scene: "apple",
+    tagline: "Лимон сары — қышқыл!",
+  },
   КЕМЕ: {
     lottieFile: "ship1.json",
     scene: "apple",
     tagline: "Кеме жүзіп барады!",
+  },
+  МЫСЫҚ: {
+    videoFile: "cat.mp4",
+    scene: "child",
+    tagline: "Мысық ойнап жүр!",
   },
   ӨРМЕКШІ: {
     lottieFile: "Spider.json",

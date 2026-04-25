@@ -33,6 +33,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "АЛМА",
         emoji: "🍎",
+        voiced: true,
         letters: [
           L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
           L("Л", "#A64CFF", "dots", "#6526A8", "off"),
@@ -43,6 +44,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "АРЫСТАН",
         emoji: "🦁",
+        voiced: true,
         letters: [
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
           L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
@@ -60,7 +62,9 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
     words: [
       {
         word: "ӘТЕШ",
-        emoji: "🔥",
+        emoji: "🐓",
+        svgSrc: "/svg/rooster.svg",
+        voiced: true,
         letters: [
           L("Ә", "#FF2E74", "dots", "#B30046"),
           L("Т", "#A64CFF", "dots", "#6526A8", "off"),
@@ -76,6 +80,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "БАЛА",
         emoji: "👶",
+        voiced: true,
         letters: [
           L("Б", "#5E7BFF", "spots", "#2E45B3", "off"),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
@@ -91,6 +96,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ВИРУС",
         emoji: "🦠",
+        voiced: true,
         letters: [
           L("В", "#5B7CFF", "dots", "#2E4588", "off"),
           L("И", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
@@ -107,6 +113,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ГҮЛ",
         emoji: "🌷",
+        voiced: true,
         letters: [
           L("Г", "#E91E8C", "lines", "#9C145E", "off"),
           L("Ү", "#7C4DFF", "dots", "#4A2FA3", "on", { eyeY: 0.34, mouthY: 0.74 }),
@@ -452,6 +459,15 @@ export function letterCharsFromWords(words: WordDef[]): string[] {
     for (const L of w.letters) {
       set.add(L.ch);
     }
+  }
+  return [...set];
+}
+
+/** voiced=true деп белгіленген сөздер тізімі (preload үшін). */
+export function voicedWordsFromWords(words: WordDef[]): string[] {
+  const set = new Set<string>();
+  for (const w of words) {
+    if (w.voiced) set.add(w.word);
   }
   return [...set];
 }

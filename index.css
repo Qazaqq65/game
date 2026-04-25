@@ -86,8 +86,8 @@ body {
   overscroll-behavior: none;
 }
 
-/* iOS: толық өшіру мүмкін емес — тек жеңіл азайту */
 html {
+  overscroll-behavior: none;
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
 }

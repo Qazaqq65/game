@@ -133,6 +133,8 @@ export function PuzzleBoard({
     slots,
     dragIdx,
     won,
+    readingWave,
+    readingWaveStepMs,
     rootRef,
     onTilePointerDown,
     onTilePointerMove,
@@ -187,6 +189,8 @@ export function PuzzleBoard({
           size={layoutTileSize}
           isDragging={dragIdx === i}
           isLowEnd={isLowEnd}
+          readingWave={readingWave}
+          readingWaveStepMs={readingWaveStepMs}
           onPointerDown={onTilePointerDown}
           onPointerMove={onTilePointerMove}
           onPointerEnd={onTilePointerEnd}
