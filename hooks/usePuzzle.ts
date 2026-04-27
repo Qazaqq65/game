@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  playLetterSnapSound,
   playWordPronunciation,
   startSound,
   stopSound,
@@ -388,6 +389,8 @@ interface UsePuzzleOptions {
   /** Слот/scatter ішкі жолақ; тасымал толық container шегінде */
   shellContentInsets?: ShellContentInsets | null;
   onComplete?: (word: string) => void;
+  /** placed === n−1 — WinScreen/Lottie/сөз mp3 префетч (бір рет). */
+  onAlmostWin?: () => void;
 }
 
 /** Тасымалдау барысында tile массивін әр кадрда қайта құрамаймыз — тек осы координаталар */
@@ -429,6 +432,7 @@ export function usePuzzle({
   tileSize,
   shellContentInsets = null,
   onComplete,
+  onAlmostWin,
 }: UsePuzzleOptions): UsePuzzleReturn {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -460,6 +464,7 @@ export function usePuzzle({
 
   /** RAF-цикл id: буква қолда тұрғанда тоқтамай айналады. */
   const dragAnimTickRef = useRef<number | null>(null);
+  const almostWinFiredRef = useRef(false);
 
   const applyDragVisual = useCallback((tileIdx: number | null) => {
     if (tileIdx === null) return;
@@ -579,6 +584,7 @@ export function usePuzzle({
 
     setWon(false);
     setReadingWave(false);
+    almostWinFiredRef.current = false;
     dragRef.current = null;
     setDragIdx(null);
     dragVisualFrameRef.current = null;
@@ -768,6 +774,18 @@ export function usePuzzle({
 
         tilesRef.current = next;
 
+        playLetterSnapSound(ch);
+
+        const totalLetters = word.letters.length;
+        if (
+          totalLetters >= 2 &&
+          !almostWinFiredRef.current &&
+          next.filter(t => t.snapped).length === totalLetters - 1
+        ) {
+          almostWinFiredRef.current = true;
+          onAlmostWin?.();
+        }
+
         if (checkPuzzleWin(next)) {
           onComplete?.(word.word);
           stopSound();
@@ -806,7 +824,7 @@ export function usePuzzle({
         return next;
       });
     },
-    [word, onComplete, checkPuzzleWin]
+    [word, onComplete, onAlmostWin, checkPuzzleWin]
   );
 
   useLayoutEffect(() => {

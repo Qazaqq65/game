@@ -13,14 +13,16 @@ import {
   startWinCelebrationMusic,
   stopWinCelebrationMusic,
 } from "../utils/sound";
+import {
+  fetchLottieJson,
+  lottieUrlForFile,
+} from "../utils/celebrationAssets";
 
 interface WinScreenProps {
   word: string;
   emoji: string;
   onNext: () => void;
 }
-
-const celebrationJsonCache = new Map<string, object>();
 
 /** WinScreen.module.css: max(winScreenFadeIn 2.2s, celebrationFadeIn ~2.28s) */
 const WIN_ENTRANCE_MS = 3400;
@@ -31,31 +33,9 @@ const SAVANNA_PARADE_LOOP_MS = 6200;
 const CHILD_VIDEO_PLAY_MS = 7000;
 const VIRUS_SEQUENCE_STEP_MS = 2200;
 const VIRUS_FINAL_HOLD_MS = 1900;
-const FLOWER_EXTRA_HOLD_MS = 4200;
+const FLOWER_EXTRA_HOLD_MS = 2200;
 const ROCKET_EXTRA_HOLD_MS = 2500;
 const DOG_SECOND_DELAY_MS = 2000;
-
-function lottieUrlForFile(file: string): string {
-  return `/lottie/${encodeURIComponent(file)}`;
-}
-
-function fetchCelebrationJson(url: string): Promise<object | null> {
-  const cached = celebrationJsonCache.get(url);
-  if (cached) return Promise.resolve(cached);
-  return fetch(url)
-    .then(r => {
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
-    })
-    .then(json => {
-      if (json && typeof json === "object") {
-        celebrationJsonCache.set(url, json as object);
-        return json as object;
-      }
-      return null;
-    })
-    .catch(() => null);
-}
 
 function CelebrationLottieView({
   data,
@@ -295,9 +275,9 @@ function loadCelebrationAssets(
   const followUpUrls = (def.followUpLottieFiles ?? []).map(lottieUrlForFile);
 
   return Promise.all([
-    fetchCelebrationJson(lionUrl),
-    lizardUrl ? fetchCelebrationJson(lizardUrl) : Promise.resolve(null),
-    ...followUpUrls.map(url => fetchCelebrationJson(url)),
+    fetchLottieJson(lionUrl),
+    lizardUrl ? fetchLottieJson(lizardUrl) : Promise.resolve(null),
+    ...followUpUrls.map(url => fetchLottieJson(url)),
   ]).then(([lion, lizard, ...followUps]) => {
     if (signal.cancelled) return { lion: null, lizard: null, followUps: [] };
     return {

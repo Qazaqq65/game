@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useLottie } from "lottie-react";
 import { useDeviceTier } from "../hooks/useDeviceTier";
 import { useInViewport } from "../hooks/useInViewport";
+import { fetchLottieJson, lottieUrlForFile } from "../utils/celebrationAssets";
 import styles from "./MenuMascot.module.css";
 
 /** Файл в `public/lottie/` (пробелы в имени — через encodeURIComponent). */
 const LOTTIE_FILE = "Cat playing animation.json";
-const LOTTIE_URL = `/lottie/${encodeURIComponent(LOTTIE_FILE)}`;
+const LOTTIE_URL = lottieUrlForFile(LOTTIE_FILE);
 
 function MascotLottie({ data }: { data: object }) {
   const { targetRef, inViewport } = useInViewport<HTMLDivElement>({
@@ -44,18 +45,11 @@ export function MenuMascot() {
   useEffect(() => {
     if (isLowEnd) return;
     let cancelled = false;
-    fetch(LOTTIE_URL)
-      .then(r => {
-        if (!r.ok) throw new Error(String(r.status));
-        return r.json();
-      })
-      .then(json => {
-        if (!cancelled && json && typeof json === "object")
-          setData(json as object);
-      })
-      .catch(() => {
-        if (!cancelled) setData(null);
-      });
+    // Ортақ кеш + in-flight dedup. StrictMode double-effect те бір ғана сұраныс
+    // береді; әріптік ремоунттар JSON-ды қайта жүктемейді.
+    fetchLottieJson(LOTTIE_URL).then(json => {
+      if (!cancelled && json) setData(json);
+    });
     return () => {
       cancelled = true;
     };

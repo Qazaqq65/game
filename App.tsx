@@ -9,7 +9,14 @@ import {
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./firebase";
-import { preloadSounds, preloadWordPronunciations, unlockAudio } from "./utils/sound";
+import {
+  preloadSoundsForWord,
+  preloadWordPronunciations,
+  prefetchWinCelebrationMusic,
+  unlockAudio,
+} from "./utils/sound";
+import { prefetchCelebrationAssets } from "./utils/celebrationAssets";
+import { winCelebrationForWord } from "./data/winCelebrations";
 import { isFullscreenSupported, toggleFullscreen, fullscreenElement } from "./utils/fullscreen";
 import { PuzzleBoard } from "./components/PuzzleBoard";
 import { EntryMenu } from "./components/EntryMenu";
@@ -17,8 +24,6 @@ import LoginPage from "./components/LoginPage";
 import {
   WORDS,
   WORD_MENU_GROUPS,
-  letterCharsFromWords,
-  voicedWordsFromWords,
 } from "./data/words";
 import { useBoardDimensions } from "./hooks/useBoardDimensions";
 import type { WordDef } from "./types";
@@ -76,6 +81,64 @@ function GameSession({
   const n = WORDS.length;
   const idx = wordIdx % n;
 
+  /**
+   * Lazy ассеттер. Стратегия — «just-in-time»:
+   *  • Ағымдағы сөздің ӘРІП дыбыстары — бірден (drag-те бірден ойнау керек,
+   *    кідіруге болмайды).
+   *  • Сөздің толық дыбыстауы (Алма.MP3 …), Lottie ассеттері және celebration
+   *    музыкасы — пайдаланушы 1 буқваға келгенде ғана жүктеледі
+   *    (handleAlmostWin → onAlmostWin → префетч). Егер тастап кетсе — нөл
+   *    артық трафик. Қысқа сөздер (≤2 буква) үшін almost-win тым кеш —
+   *    ондайларда idle-те қауіпсіз префетч.
+   *  • Келесі сөздің тек ӘРІП дыбыстары idle-те («Алға →» кідірісі
+   *    болмасын). Қалғаны (mp3 сөз + Lottie + музыка) сол сөзге өткенде
+   *    almost-win-те жүктеледі.
+   */
+  useEffect(() => {
+    preloadSoundsForWord(currentWord);
+
+    let idShortCel: number | null = null;
+    if (currentWord.letters.length <= 2) {
+      const cel = winCelebrationForWord(currentWord.word);
+      idShortCel = scheduleIdleWork(() => {
+        prefetchCelebrationAssets(currentWord.word);
+        prefetchWinCelebrationMusic(cel?.musicFile);
+        if (currentWord.voiced) {
+          preloadWordPronunciations([currentWord.word]);
+        }
+      });
+    }
+
+    const nextWord = WORDS[(wordIdx + 1) % n];
+    const idNext = scheduleIdleWork(() => {
+      preloadSoundsForWord(nextWord);
+    });
+
+    return () => {
+      if (idShortCel != null) cancelIdleWork(idShortCel);
+      cancelIdleWork(idNext);
+    };
+  }, [currentWord, wordIdx, n]);
+
+  /**
+   * 1 буква қалды → ағымдағы сөздің:
+   *   • mp3 толық дыбыстауы (Алма.MP3 …) — voiced болса
+   *   • Lottie ассеттері (celebration JSON-дары)
+   *   • celebration музыкасы (apple.mp3 …)
+   * параллель префетчке жіберіледі. ~2.4с буфер (lead-in + reading wave + tail)
+   * + соңғы букваны қою уақыты — бұл уақытта файлдар жетіп үлгереді.
+   * Барлығы идемпотентті — қайта шақырылса трафик жоқ.
+   */
+  const handleAlmostWin = useCallback(() => {
+    if (currentWord.voiced) {
+      preloadWordPronunciations([currentWord.word]);
+    }
+    prefetchCelebrationAssets(currentWord.word);
+    prefetchWinCelebrationMusic(
+      winCelebrationForWord(currentWord.word)?.musicFile
+    );
+  }, [currentWord]);
+
   /** Оптимизация: тұрақты колбэк сілтемелері — PuzzleBoard артық ререндерден сақталады. */
   const onNavigatePrev = useCallback(
     () => setWordIdx(i => (i - 1 + n) % n),
@@ -101,6 +164,7 @@ function GameSession({
       onNavigatePrevWord={onNavigatePrev}
       onNavigateNextWord={onNavigateNext}
       onNext={onNavigateNext}
+      onAlmostWin={handleAlmostWin}
     />
   );
 }
@@ -137,11 +201,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const id = scheduleIdleWork(() => {
-      preloadSounds([...letterCharsFromWords(WORDS), "snap", "win"]);
-      preloadWordPronunciations(voicedWordsFromWords(WORDS));
-    });
-
+    // Дыбыс контекстін бірінші тапсу/басылғанда босатамыз — бұл аудио качалмайды,
+    // тек браузерге «жариялы пайдаланушы әрекеті» болғанын білдіреді.
+    // Менюде ЕШҚАНДАЙ mp3/Lottie жүктелмейді: trafik 0 байт.
     const unlock = () => {
       unlockAudio();
       window.removeEventListener("pointerdown", unlock);
@@ -150,7 +212,6 @@ export default function App() {
     window.addEventListener("pointerdown", unlock);
 
     return () => {
-      cancelIdleWork(id);
       window.removeEventListener("pointerdown", unlock);
     };
   }, []);

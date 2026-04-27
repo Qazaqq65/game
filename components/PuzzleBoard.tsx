@@ -39,6 +39,8 @@ interface PuzzleBoardProps {
   onNavigateNextWord?: () => void;
   levelIndex?: number;
   totalLevels?: number;
+  /** Сөзді жинау 1 буқваға қалғанда — бір рет шақырылады. */
+  onAlmostWin?: () => void;
 }
 
 export function PuzzleBoard({
@@ -55,6 +57,7 @@ export function PuzzleBoard({
   onNavigateNextWord,
   levelIndex,
   totalLevels,
+  onAlmostWin,
 }: PuzzleBoardProps) {
   const [measured, setMeasured] = useState<{ w: number; h: number } | null>(
     null
@@ -146,6 +149,7 @@ export function PuzzleBoard({
     tileSize: layoutTileSize,
     shellContentInsets,
     onComplete,
+    onAlmostWin,
   });
 
   useLayoutEffect(() => {
