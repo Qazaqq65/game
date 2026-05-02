@@ -30,10 +30,10 @@ interface WinScreenProps {
   /** false — overlay жасырылған, бірақ компонент DOM-да қалуы мүмкін (Lottie қайта құралмасын). */
   visible: boolean;
   /**
-   * Сан бөлімі — Lottie/видео парады қолданылмайды, қысқа статикалық жеңіс.
+   * Сан / фигуралар — Lottie парады қолданылмайды, қысқа статикалық жеңіс.
    * Әріптер режимінде әдепкі «letters».
    */
-  variant?: "letters" | "digits";
+  variant?: "letters" | "digits" | "figures";
 }
 
 /** WinScreen.module.css: max(winScreenFadeIn 2.2s, celebrationFadeIn ~2.28s) */
@@ -204,8 +204,11 @@ export function WinScreen({
   visible,
   variant = "letters",
 }: WinScreenProps) {
-  const celebration =
-    variant === "digits" ? null : winCelebrationForWord(word);
+  const minimalWinVariant =
+    variant === "digits" || variant === "figures";
+  const celebration = minimalWinVariant
+    ? null
+    : winCelebrationForWord(word);
   const [lionData, setLionData] = useState<object | null>(null);
   const [followUpData, setFollowUpData] = useState<object[]>([]);
   const [virusFrameIndex, setVirusFrameIndex] = useState(0);
@@ -370,7 +373,7 @@ export function WinScreen({
   const rootClass = [
     styles.root,
     !visible ? styles.rootHidden : "",
-    variant === "digits"
+    minimalWinVariant
       ? styles.rootDigits
       : showParade
         ? styles.rootParade
@@ -387,7 +390,7 @@ export function WinScreen({
       aria-hidden={!visible}
       aria-label={`${displayLabel ?? word} жиналды`}
     >
-      {variant === "digits" ? (
+      {minimalWinVariant ? (
         <div className={styles.digitsWinPanel}>
           <span className={styles.digitsWinEmoji} aria-hidden>
             {emoji}

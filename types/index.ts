@@ -91,6 +91,11 @@ export interface WordDef {
   };
   /** true — GhostSlot контурында дұрыс әріп/цифр көрсетілмейді (сан санау). */
   hideSlotGlyph?: boolean;
+  /**
+   * Фигуралар бөлімі: арнайы экран (классикалық пазл орнына).
+   * intro — танысу, find — табу, sort — сұрыптау (ойын мазмұны кейін толықтырылады).
+   */
+  figureStage?: "intro" | "find" | "sort";
 }
 
 export interface TileState {

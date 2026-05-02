@@ -21,6 +21,7 @@ import {
   toggleFullscreen,
 } from "../utils/fullscreen";
 import styles from "./PuzzleBoard.module.css";
+import { FigureLevelBoard } from "./FigureLevelBoard";
 
 interface PuzzleBoardProps {
   word: WordDef;
@@ -43,7 +44,7 @@ interface PuzzleBoardProps {
   onWinReady?: () => void;
 }
 
-export function PuzzleBoard({
+function PuzzleBoardImpl({
   word,
   tileSize = 108,
   width = 800,
@@ -374,4 +375,11 @@ export function PuzzleBoard({
     </div>
     </>
   );
+}
+
+export function PuzzleBoard(props: PuzzleBoardProps) {
+  if (props.word.figureStage != null) {
+    return <FigureLevelBoard {...props} />;
+  }
+  return <PuzzleBoardImpl {...props} />;
 }

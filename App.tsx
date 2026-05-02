@@ -3,6 +3,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type Dispatch,
@@ -30,10 +31,11 @@ import {
   WORD_MENU_GROUPS,
 } from "./data/words";
 import { DIGIT_LEVELS, DIGIT_ORDER_LEVEL_INDEX, resolveDigitLevelForPlay } from "./data/digitLevels";
+import { FIGURE_LEVELS } from "./data/figureLevels";
 import { useBoardDimensions } from "./hooks/useBoardDimensions";
 import type { WordDef } from "./types";
 
-type PlaySource = "letters" | "digits";
+type PlaySource = "letters" | "digits" | "figures";
 
 /** Сан бөлімі: санау, сандар реті, қосу, азайту — әр деңгейді 3 рет шешкенше келесіге өтпейді. */
 const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3, 4]);
@@ -58,17 +60,132 @@ function BackgroundMusicControls({
   onToggle,
   onVolumeChange,
   buttonStyle,
+  compact,
 }: {
   on: boolean;
   volume: number;
   onToggle: () => void;
   onVolumeChange: (v: number) => void;
   buttonStyle?: CSSProperties;
+  /** Ойында — бір 🔊 түймесі: басқанда панель ашылады (деңгей + қосу/сөндіру). */
+  compact?: boolean;
 }) {
   const btnStyle = { ...bgMusicControlBtnStyle, ...buttonStyle };
   const pct = Math.round(
     (volume / BACKGROUND_MUSIC_VOLUME_MAX) * 100
   );
+  const [volumePanelOpen, setVolumePanelOpen] = useState(false);
+  const compactWrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!compact || !volumePanelOpen) return;
+    const close = (e: MouseEvent) => {
+      const el = compactWrapRef.current;
+      if (el && !el.contains(e.target as Node)) {
+        setVolumePanelOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [compact, volumePanelOpen]);
+
+  const rangeInput = (
+    <input
+      type="range"
+      min={0}
+      max={100}
+      value={pct}
+      onChange={e => {
+        const p = Number(e.target.value) / 100;
+        onVolumeChange(p * BACKGROUND_MUSIC_VOLUME_MAX);
+      }}
+      aria-label="Фондық музыка дыбыс деңгейі"
+      title="Дыбыс деңгейі"
+      style={{
+        width: compact ? "min(168px, 42vw)" : "min(120px, 30vw)",
+        height: 32,
+        accentColor: "#c2410c",
+        cursor: "pointer",
+      }}
+    />
+  );
+
+  if (compact) {
+    return (
+      <div
+        ref={compactWrapRef}
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          maxWidth: "100%",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setVolumePanelOpen(o => !o)}
+          style={btnStyle}
+          aria-expanded={volumePanelOpen}
+          aria-haspopup="dialog"
+          title={
+            volumePanelOpen
+              ? "Жабу"
+              : "Фондық музыканы басқару"
+          }
+          aria-label={
+            volumePanelOpen
+              ? "Басқару панелін жабу"
+              : "Фондық музыканы басқару"
+          }
+        >
+          {on ? "🔊" : "🔇"}
+        </button>
+        {volumePanelOpen ? (
+          <div
+            role="dialog"
+            aria-label="Фондық музыка"
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: 0,
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.96)",
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
+              zIndex: 10001,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              gap: 12,
+              minWidth: "min(188px, 52vw)",
+            }}
+          >
+            {rangeInput}
+            <button
+              type="button"
+              onClick={onToggle}
+              style={{
+                padding: "8px 10px",
+                fontSize: 14,
+                fontWeight: 700,
+                fontFamily: "inherit",
+                borderRadius: 10,
+                border: "1px solid rgba(120,95,75,0.22)",
+                background: "rgba(255,255,255,0.9)",
+                color: "#444",
+                cursor: "pointer",
+              }}
+              aria-pressed={on}
+            >
+              {on ? "🔇 Музыканы сөндіру" : "🔊 Музыканы қосу"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -92,24 +209,7 @@ function BackgroundMusicControls({
       >
         {on ? "🔊" : "🔇"}
       </button>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={pct}
-        onChange={e => {
-          const p = Number(e.target.value) / 100;
-          onVolumeChange(p * BACKGROUND_MUSIC_VOLUME_MAX);
-        }}
-        aria-label="Фондық музыка дыбыс деңгейі"
-        title="Дыбыс деңгейі"
-        style={{
-          width: "min(120px, 30vw)",
-          height: 32,
-          accentColor: "#c2410c",
-          cursor: "pointer",
-        }}
-      />
+      {rangeInput}
     </div>
   );
 }
@@ -294,7 +394,13 @@ function GameSession({
         emoji={currentWord.emoji}
         nextButtonLabel={winNextButtonLabel}
         onNext={onWinNext}
-        variant={sessionKey === "digits" ? "digits" : "letters"}
+        variant={
+          sessionKey === "letters"
+            ? "letters"
+            : sessionKey === "figures"
+              ? "figures"
+              : "digits"
+        }
       />
     </>
   );
@@ -392,7 +498,12 @@ export default function App() {
         return;
       }
       setPlaySource(source);
-      const list = source === "letters" ? WORDS : DIGIT_LEVELS;
+      const list =
+        source === "letters"
+          ? WORDS
+          : source === "digits"
+            ? DIGIT_LEVELS
+            : FIGURE_LEVELS;
       const i = list.findIndex(x => x === w);
       setWordIdx(i >= 0 ? i : 0);
       setEntered(true);
@@ -400,7 +511,12 @@ export default function App() {
     [currentUser]
   );
 
-  const activeLevels = playSource === "letters" ? WORDS : DIGIT_LEVELS;
+  const activeLevels =
+    playSource === "letters"
+      ? WORDS
+      : playSource === "digits"
+        ? DIGIT_LEVELS
+        : FIGURE_LEVELS;
 
   /** Оптимизация: entered/wordIdx өзгермесе қайта есептелмейді. */
   const isAlmaSession = useMemo(
@@ -482,6 +598,7 @@ export default function App() {
           <EntryMenu
             groups={WORD_MENU_GROUPS}
             digitLevels={DIGIT_LEVELS}
+            figureLevels={FIGURE_LEVELS}
             onPickWord={handlePickWord}
           />
 
@@ -536,12 +653,14 @@ export default function App() {
           <div
             style={{
               position: "fixed",
-              top: 14,
+              /* Топ-бардағы ⇱ толық экран түймесінің үстіне шықпау (PuzzleBoard topBar ~60px + safe area) */
+              top: "calc(env(safe-area-inset-top, 0px) + 62px)",
               right: 16,
               zIndex: 999,
             }}
           >
             <BackgroundMusicControls
+              compact
               on={bgMusicOn}
               volume={bgMusicVolume}
               onToggle={toggleBackgroundMusic}
