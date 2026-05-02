@@ -29,6 +29,11 @@ interface WinScreenProps {
   nextButtonLabel?: string;
   /** false — overlay жасырылған, бірақ компонент DOM-да қалуы мүмкін (Lottie қайта құралмасын). */
   visible: boolean;
+  /**
+   * Сан бөлімі — Lottie/видео парады қолданылмайды, қысқа статикалық жеңіс.
+   * Әріптер режимінде әдепкі «letters».
+   */
+  variant?: "letters" | "digits";
 }
 
 /** WinScreen.module.css: max(winScreenFadeIn 2.2s, celebrationFadeIn ~2.28s) */
@@ -193,12 +198,14 @@ function loadCelebrationAssets(
 export function WinScreen({
   word,
   displayLabel,
-  emoji: _emoji,
+  emoji,
   onNext,
   nextButtonLabel,
   visible,
+  variant = "letters",
 }: WinScreenProps) {
-  const celebration = winCelebrationForWord(word);
+  const celebration =
+    variant === "digits" ? null : winCelebrationForWord(word);
   const [lionData, setLionData] = useState<object | null>(null);
   const [followUpData, setFollowUpData] = useState<object[]>([]);
   const [virusFrameIndex, setVirusFrameIndex] = useState(0);
@@ -363,7 +370,11 @@ export function WinScreen({
   const rootClass = [
     styles.root,
     !visible ? styles.rootHidden : "",
-    showParade ? styles.rootParade : styles.rootPlain,
+    variant === "digits"
+      ? styles.rootDigits
+      : showParade
+        ? styles.rootParade
+        : styles.rootPlain,
   ]
     .filter(Boolean)
     .join(" ");
@@ -376,30 +387,54 @@ export function WinScreen({
       aria-hidden={!visible}
       aria-label={`${displayLabel ?? word} жиналды`}
     >
-      {showParade ? (
-        <WinCelebrationScene
-          scene={celebration.scene}
-          lionData={lionData}
-          videoUrl={childVideoUrl}
-          actorVariant={celebration.actorVariant}
-          followUpData={followUpData}
-          virusFrameIndex={virusFrameIndex}
-          showDogPartner={showDogPartner}
-        />
-      ) : null}
+      {variant === "digits" ? (
+        <div className={styles.digitsWinPanel}>
+          <span className={styles.digitsWinEmoji} aria-hidden>
+            {emoji}
+          </span>
+          <p className={styles.digitsWinTitle}>{displayLabel ?? word}</p>
+          <p className={styles.digitsWinTag}>Жарайсың!</p>
+          <button
+            type="button"
+            className={`${styles.nextButton} ${styles.digitsWinNext}`}
+            onClick={onNext}
+            aria-label={
+              nextButtonLabel != null
+                ? nextButtonLabel.replace(/→/g, "").trim()
+                : "Алға"
+            }
+          >
+            {nextButtonLabel ?? "Алға →"}
+          </button>
+        </div>
+      ) : (
+        <>
+          {showParade && celebration ? (
+            <WinCelebrationScene
+              scene={celebration.scene}
+              lionData={lionData}
+              videoUrl={childVideoUrl}
+              actorVariant={celebration.actorVariant}
+              followUpData={followUpData}
+              virusFrameIndex={virusFrameIndex}
+              showDogPartner={showDogPartner}
+            />
+          ) : null}
 
-      <button
-        type="button"
-        className={`${styles.nextButton} ${styles.nextButtonCorner}`}
-        onClick={onNext}
-        aria-label={
-          nextButtonLabel != null
-            ? nextButtonLabel.replace(/→/g, "").trim()
-            : "Алға, келесі сөз"
-        }
-      >
-        {nextButtonLabel ?? "Алға →"}
-      </button>
+          <button
+            type="button"
+            className={`${styles.nextButton} ${styles.nextButtonCorner}`}
+            onClick={onNext}
+            aria-label={
+              nextButtonLabel != null
+                ? nextButtonLabel.replace(/→/g, "").trim()
+                : "Алға, келесі сөз"
+            }
+          >
+            {nextButtonLabel ?? "Алға →"}
+          </button>
+        </>
+      )}
     </div>,
     document.body
   );

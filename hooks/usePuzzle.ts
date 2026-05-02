@@ -1,6 +1,7 @@
 import React from "react";
 import {
   playLetterSnapSound,
+  playPuzzleCorrectFeedbackSound,
   playPuzzleWrongSound,
   playWordPronunciation,
   startSound,
@@ -53,6 +54,13 @@ const PRONOUNCE_LEAD_IN_MS = 480;
 const PRONOUNCE_TAIL_MS = 380;
 /** "end" оқиғасы шықпай қалса, бұдан кейін WinScreen-ге сөзсіз өтеміз. */
 const PRONOUNCE_FALLBACK_MS = 4500;
+
+/**
+ * Әріп сөздері (levelNumber жоқ): mp3 мадақтау после каждого верного snap.
+ * 0 — отключено; N≥2 — только каждый N-й snap (например 5 — редко).
+ * Сан деңгейлері — өзге логика төменде (levelNumber === 1 т.б.).
+ */
+const LETTER_CORRECT_FEEDBACK_EVERY_N_SNAPS = 0;
 
 function readingWaveDurationMs(letterCount: number): number {
   return Math.max(0, letterCount - 1) * WAVE_STEP_MS + WAVE_LETTER_MS;
@@ -872,7 +880,27 @@ export function usePuzzle({
           }, SLOT_ACCENT_OK_MS);
         });
 
-        playLetterSnapSound(ch);
+        const snappedAfter = next.filter(t => t.snapped).length;
+        playLetterSnapSound(ch, () => {
+          if (word.levelNumber == null) {
+            const n = LETTER_CORRECT_FEEDBACK_EVERY_N_SNAPS;
+            if (
+              n >= 2 &&
+              snappedAfter > 0 &&
+              snappedAfter % n === 0
+            ) {
+              playPuzzleCorrectFeedbackSound();
+            }
+            return;
+          }
+          if (word.levelNumber === 1) {
+            if (snappedAfter % 2 === 0) {
+              playPuzzleCorrectFeedbackSound();
+            }
+          } else {
+            playPuzzleCorrectFeedbackSound();
+          }
+        });
 
         const totalLetters = word.letters.length;
         if (

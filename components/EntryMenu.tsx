@@ -24,13 +24,14 @@ function ArrowIcon({ dir }: { dir: "left" | "right" | "up" | "down" }) {
 }
 import { motion, useReducedMotion } from "framer-motion";
 import type { WordDef } from "../types";
-import { useDeviceTier, type PerformanceMode } from "../hooks/useDeviceTier";
+import { useDeviceTier } from "../hooks/useDeviceTier";
 import {
   MENU_CARD_TONES,
   menuToneIndexForDigitCard,
   menuToneIndexForLetterCard,
   type MenuCardToneCss,
 } from "../data/menuCardThemes";
+import { preloadDigitLevelIntroSounds } from "../utils/sound";
 import styles from "./EntryMenu.module.css";
 import { MenuMascot } from "./MenuMascot";
 
@@ -134,12 +135,18 @@ export function EntryMenu({
   digitLevels,
   onPickWord,
 }: EntryMenuProps) {
-  const { mode, setMode, isLowEnd } = useDeviceTier();
+  const { isLowEnd } = useDeviceTier();
   const reduceMotion = useReducedMotion() ?? false;
+  useEffect(() => {
+    preloadDigitLevelIntroSounds();
+  }, []);
   const [menuCategory, setMenuCategory] = useState<MenuCategory>("letters");
   const [snappyMenu, setSnappyMenu] = useState(readSnappyMenu);
   const [wordsVertical, setWordsVertical] = useState(false);
   const [letterKey, setLetterKey] = useState(() => groups[0]?.letter ?? "");
+  const [digitLevelKey, setDigitLevelKey] = useState(
+    () => digitLevels.find(w => w.levelNumber != null)?.levelNumber ?? 1
+  );
   const [centeredCardIdx, setCenteredCardIdx] = useState(0);
   const [filterScroll, setFilterScroll] = useState<ScrollEdges>({
     canPrev: false,
@@ -150,8 +157,32 @@ export function EntryMenu({
     canNext: true,
   });
   const trackRef = useRef<HTMLDivElement>(null);
+  const categoryTrackRef = useRef<HTMLDivElement>(null);
+  const [categoryThumbX, setCategoryThumbX] = useState(0);
   const filterNavRef = useRef<HTMLElement>(null);
+  const digitFilterNavRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const syncCategoryThumb = useCallback(() => {
+    const el = categoryTrackRef.current;
+    if (!el) return;
+    const padX = 5 * 2;
+    const inner = Math.max(0, el.clientWidth - padX);
+    const half = inner / 2;
+    setCategoryThumbX(menuCategory === "digits" ? half : 0);
+  }, [menuCategory]);
+
+  useLayoutEffect(() => {
+    syncCategoryThumb();
+  }, [syncCategoryThumb]);
+
+  useEffect(() => {
+    const el = categoryTrackRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => syncCategoryThumb());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [syncCategoryThumb]);
 
   const flatItems = useMemo((): FlatItem[] => {
     if (menuCategory === "digits") {
@@ -167,7 +198,8 @@ export function EntryMenu({
   }, [groups, digitLevels, menuCategory]);
 
   const menuCardCount =
-    flatItems.length + (menuCategory === "letters" ? 1 : 0);
+    flatItems.length +
+    (menuCategory === "letters" || menuCategory === "digits" ? 1 : 0);
 
   const syncCenteredCard = useCallback(() => {
     const el = trackRef.current;
@@ -202,6 +234,16 @@ export function EntryMenu({
     return m;
   }, [groups]);
 
+  const firstIndexByDigitLevel = useMemo(() => {
+    const m: Record<number, number> = {};
+    digitLevels.forEach((w, i) => {
+      if (w.levelNumber != null) {
+        m[w.levelNumber] = i;
+      }
+    });
+    return m;
+  }, [digitLevels]);
+
   const scrollToLetter = useCallback(
     (letter: string) => {
       setLetterKey(letter);
@@ -228,15 +270,47 @@ export function EntryMenu({
     [firstIndexByLetter, wordsVertical]
   );
 
-  const scrollFilterBy = useCallback((dir: -1 | 1) => {
-    const el = filterNavRef.current;
-    if (!el) return;
-    const step = Math.max(96, Math.round(el.clientWidth * 0.52));
-    scrollFilterByDelta(el, dir * step);
-    requestAnimationFrame(() =>
-      setFilterScroll(readScrollEdgesX(el))
-    );
-  }, []);
+  const scrollToDigitLevel = useCallback(
+    (level: number) => {
+      setDigitLevelKey(level);
+      const idx = firstIndexByDigitLevel[level];
+      requestAnimationFrame(() => {
+        if (idx !== undefined) {
+          cardRefs.current[idx]?.scrollIntoView({
+            behavior: "smooth",
+            block: wordsVertical ? "center" : "nearest",
+            inline: wordsVertical ? "nearest" : "center",
+          });
+        }
+        const nav = digitFilterNavRef.current;
+        const btn = nav?.querySelector<HTMLElement>(
+          `[data-digit-level="${CSS.escape(String(level))}"]`
+        );
+        btn?.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+      });
+    },
+    [firstIndexByDigitLevel, wordsVertical]
+  );
+
+  const scrollFilterBy = useCallback(
+    (dir: -1 | 1) => {
+      const el =
+        menuCategory === "letters"
+          ? filterNavRef.current
+          : menuCategory === "digits"
+            ? digitFilterNavRef.current
+            : null;
+      if (!el) return;
+      const step = Math.max(96, Math.round(el.clientWidth * 0.52));
+      scrollFilterByDelta(el, dir * step);
+      requestAnimationFrame(() => setFilterScroll(readScrollEdgesX(el)));
+    },
+    [menuCategory]
+  );
 
   const scrollTrackBy = useCallback(
     (dir: -1 | 1) => {
@@ -288,7 +362,12 @@ export function EntryMenu({
   }, [flatItems.length]);
 
   useEffect(() => {
-    const el = filterNavRef.current;
+    const el =
+      menuCategory === "letters"
+        ? filterNavRef.current
+        : menuCategory === "digits"
+          ? digitFilterNavRef.current
+          : null;
     if (!el) return;
     let rafId: number | null = null;
     const sync = () =>
@@ -311,13 +390,19 @@ export function EntryMenu({
       if (rafId != null) cancelAnimationFrame(rafId);
       ro.disconnect();
     };
-  }, [groups.length, menuCategory]);
+  }, [groups.length, digitLevels.length, menuCategory]);
 
   useEffect(() => {
     if (menuCategory === "letters" && groups[0]) {
       setLetterKey(groups[0].letter);
     }
   }, [menuCategory, groups]);
+
+  useEffect(() => {
+    if (menuCategory === "digits" && digitLevels[0]?.levelNumber != null) {
+      setDigitLevelKey(digitLevels[0].levelNumber);
+    }
+  }, [menuCategory, digitLevels]);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -376,49 +461,31 @@ export function EntryMenu({
 
       <div className={styles.inner}>
         <div className={styles.filterColumn}>
-          <div className={styles.perfPanel}>
-            <span className={styles.perfTitle}>Көрнекілік</span>
-            <div className={styles.perfModes} role="group" aria-label="Өнімділік режимі">
-              {(
-                [
-                  ["auto", "Авто"],
-                  ["high", "Жоғары"],
-                  ["low", "Төмен"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={
-                    mode === value
-                      ? `${styles.perfBtn} ${styles.perfBtnActive}`
-                      : styles.perfBtn
-                  }
-                  onClick={() => setMode(value as PerformanceMode)}
-                  aria-pressed={mode === value}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <span className={styles.perfHint}>
-              {mode === "auto"
-                ? isLowEnd
-                  ? "Авто: төмен режим"
-                  : "Авто: жоғары режим"
-                : mode === "low"
-                  ? "Таңдалған: төмен режим"
-                  : "Таңдалған: жоғары режим"}
-            </span>
-          </div>
           <div className={styles.mascotAboveLetters}>
             <MenuMascot />
           </div>
           <div
+            ref={categoryTrackRef}
             className={styles.categorySwitch}
             role="group"
             aria-label="Сөздер немесе сандар"
           >
+            <motion.div
+              aria-hidden
+              className={styles.categoryThumb}
+              initial={false}
+              animate={{ x: categoryThumbX }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : {
+                      type: "spring",
+                      stiffness: 460,
+                      damping: 26,
+                      mass: 0.68,
+                    }
+              }
+            />
             <button
               type="button"
               className={
@@ -484,6 +551,61 @@ export function EntryMenu({
                 type="button"
                 className={styles.horizScrollBtn}
                 aria-label="Әріптерді оңға айналдыру"
+                disabled={!filterScroll.canNext}
+                onClick={() => scrollFilterBy(1)}
+              >
+                <ArrowIcon dir="right" />
+              </button>
+            </div>
+          ) : null}
+          {menuCategory === "digits" ? (
+            <div className={styles.filterWrap}>
+              <button
+                type="button"
+                className={styles.horizScrollBtn}
+                aria-label="Деңгей нөмірлерін солға айналдыру"
+                disabled={!filterScroll.canPrev}
+                onClick={() => scrollFilterBy(-1)}
+              >
+                <ArrowIcon dir="left" />
+              </button>
+              <nav
+                ref={digitFilterNavRef}
+                className={styles.filter}
+                aria-label="Деңгей нөмірі"
+              >
+                {digitLevels.map(w => {
+                  const lvl = w.levelNumber;
+                  if (lvl == null) return null;
+                  return (
+                    <motion.button
+                      key={lvl}
+                      type="button"
+                      data-digit-level={lvl}
+                      aria-pressed={digitLevelKey === lvl}
+                      className={
+                        digitLevelKey === lvl
+                          ? `${styles.filterBtn} ${styles.filterBtnOn}`
+                          : styles.filterBtn
+                      }
+                      onClick={() => scrollToDigitLevel(lvl)}
+                      whileHover={{ scale: 1.06, y: -2 }}
+                      whileTap={{ scale: 0.94 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 28,
+                      }}
+                    >
+                      {lvl}
+                    </motion.button>
+                  );
+                })}
+              </nav>
+              <button
+                type="button"
+                className={styles.horizScrollBtn}
+                aria-label="Деңгей нөмірлерін оңға айналдыру"
                 disabled={!filterScroll.canNext}
                 onClick={() => scrollFilterBy(1)}
               >
@@ -599,12 +721,7 @@ export function EntryMenu({
                         src={item.word.svgSrc}
                         alt=""
                         className={styles.cardEmojiImg}
-                        style={{
-                          width: "1em",
-                          height: "1em",
-                          verticalAlign: "middle",
-                          objectFit: "contain",
-                        }}
+                        draggable={false}
                       />
                     ) : (
                       item.word.emoji
@@ -627,6 +744,22 @@ export function EntryMenu({
                 <span className={styles.cardInner}>
                   <span className={styles.cardComingSoonText}>
                     Келесі сөздер жасалып жатыр
+                    <br />
+                    Жақында қосылады
+                  </span>
+                </span>
+              </div>
+            ) : null}
+            {menuCategory === "digits" ? (
+              <div
+                className={`${styles.card} ${styles.cardComingSoon}`}
+                data-menu-card
+                role="note"
+                aria-label="Келесі деңгей жасалып жатыр. Жақында қосылады."
+              >
+                <span className={styles.cardInner}>
+                  <span className={styles.cardComingSoonText}>
+                    Келесі деңгей жасалып жатыр
                     <br />
                     Жақында қосылады
                   </span>

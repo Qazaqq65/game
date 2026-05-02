@@ -1,5 +1,5 @@
 import type { LetterDef, PatternType, WordDef } from "../types";
-import { generateTaskInRange } from "../components/CountObjectsLevel";
+import { generateTaskInRange } from "../utils/countObjectsTask";
 import { shuffleArray } from "../utils/canvas";
 
 function D(
@@ -91,14 +91,21 @@ function resolveDigitOrderForPlay(
 
 /**
  * Бір таңбалы қосынды: a+b ∈ [2..9], 3–4 дұрыс емес нұсқа scatter-да.
+ * exclude — бұл деңгейдегі алдыңғы тапсырмалардың жауабы (сомма қайталанбасын).
  */
-function generateAddTask(): {
+function generateAddTask(exclude?: ReadonlySet<number>): {
   a: number;
   b: number;
   sum: number;
   options: number[];
 } {
-  const sum = 2 + Math.floor(Math.random() * 8);
+  const validSums = [2, 3, 4, 5, 6, 7, 8, 9].filter(
+    s => !exclude?.has(s)
+  );
+  const sum =
+    validSums.length > 0
+      ? validSums[Math.floor(Math.random() * validSums.length)]
+      : 2 + Math.floor(Math.random() * 8);
   const a = 1 + Math.floor(Math.random() * (sum - 1));
   const b = sum - a;
   const targetSize = Math.random() < 0.5 ? 3 : 4;
@@ -124,8 +131,11 @@ function generateAddTask(): {
   };
 }
 
-function resolveDigitAddForPlay(template: WordDef): WordDef {
-  const t = generateAddTask();
+function resolveDigitAddForPlay(
+  template: WordDef,
+  exclude?: ReadonlySet<number>
+): WordDef {
+  const t = generateAddTask(exclude);
   const ch = String(t.sum);
   const {
     digitAddDrag: _dad,
@@ -165,14 +175,21 @@ function resolveDigitAddForPlay(template: WordDef): WordDef {
 
 /**
  * Бір таңбалы айырма: a−b, нәтиже 1..8, 3–4 дұрыс емес нұсқа scatter-да.
+ * exclude — бұл деңгейдегі алдыңғы тапсырмалардың жауабы (айырма қайталанбасын).
  */
-function generateSubtractTask(): {
+function generateSubtractTask(exclude?: ReadonlySet<number>): {
   a: number;
   b: number;
   diff: number;
   options: number[];
 } {
-  const diff = 1 + Math.floor(Math.random() * 8);
+  const validDiffs = [1, 2, 3, 4, 5, 6, 7, 8].filter(
+    d => !exclude?.has(d)
+  );
+  const diff =
+    validDiffs.length > 0
+      ? validDiffs[Math.floor(Math.random() * validDiffs.length)]
+      : 1 + Math.floor(Math.random() * 8);
   const bMax = 9 - diff;
   const b = 1 + Math.floor(Math.random() * bMax);
   const a = diff + b;
@@ -200,8 +217,11 @@ function generateSubtractTask(): {
   };
 }
 
-function resolveDigitSubtractForPlay(template: WordDef): WordDef {
-  const t = generateSubtractTask();
+function resolveDigitSubtractForPlay(
+  template: WordDef,
+  exclude?: ReadonlySet<number>
+): WordDef {
+  const t = generateSubtractTask(exclude);
   const ch = String(t.diff);
   const {
     digitSubtractDrag: _dsd,
@@ -250,8 +270,17 @@ function resolveDigitSubtractForPlay(template: WordDef): WordDef {
  */
 export function resolveDigitLevelForPlay(
   template: WordDef,
-  options?: { digitOrderRound?: number }
+  options?: {
+    digitOrderRound?: number;
+    /** Бір деңгейдегі алдыңғы тапсырмалардың дұрыс жауабы (санау/қосу/азайту қайталанбасын). */
+    excludeAnswers?: readonly number[];
+  }
 ): WordDef {
+  const excludeSet =
+    options?.excludeAnswers && options.excludeAnswers.length > 0
+      ? new Set(options.excludeAnswers)
+      : undefined;
+
   if (template.digitOrderDrag) {
     return resolveDigitOrderForPlay(
       template,
@@ -259,16 +288,16 @@ export function resolveDigitLevelForPlay(
     );
   }
   if (template.digitAddDrag) {
-    return resolveDigitAddForPlay(template);
+    return resolveDigitAddForPlay(template, excludeSet);
   }
   if (template.digitSubtractDrag) {
-    return resolveDigitSubtractForPlay(template);
+    return resolveDigitSubtractForPlay(template, excludeSet);
   }
   if (!template.objectCountDrag) {
     return template;
   }
   const { emoji, min = 1, max = 7 } = template.objectCountDrag;
-  const t = generateTaskInRange(min, max);
+  const t = generateTaskInRange(min, max, excludeSet);
   const n = t.count;
   const ch = String(n);
   const {

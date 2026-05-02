@@ -8,6 +8,15 @@
   --menu-peach: #f06343;
   --menu-sage: #38a894;
   --menu-lilac: #9b6fd9;
+  --entry-menu-bg: color-mix(
+    in srgb,
+    var(--menu-peach) 8%,
+    color-mix(
+      in srgb,
+      var(--menu-lilac) 6%,
+      color-mix(in srgb, var(--menu-sage) 6%, var(--game-anchor-soft))
+    )
+  );
 
   position: relative;
   isolation: isolate;
@@ -25,15 +34,7 @@
   /* clip оң жақтағы ‹ › түймелерін кесіп тастайды */
   overflow-x: visible;
   overflow-y: auto;
-  background: color-mix(
-    in srgb,
-    var(--menu-peach) 8%,
-    color-mix(
-      in srgb,
-      var(--menu-lilac) 6%,
-      color-mix(in srgb, var(--menu-sage) 6%, var(--game-anchor-soft))
-    )
-  );
+  background: color-mix(in srgb, var(--entry-menu-bg) 84%, #fffefd);
 }
 
 /* Фон: жеңіл жабын + жүзіп жүрген бұдырлар (тек бір түс / мөлдірлік) */
@@ -43,12 +44,12 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: rgba(255, 250, 246, 0.45);
+  background: rgba(255, 254, 252, 0.56);
 }
 
 .blob {
   position: absolute;
-  opacity: 0.52;
+  opacity: 0.46;
   animation: blobFloat 20s ease-in-out infinite;
 }
 
@@ -95,7 +96,7 @@
   }
 }
 
-/* Көрнекілік → кот → Әріптер/Сандар → фильтр */
+/* Кот → Әріптер/Сандар → фильтр */
 .filterColumn {
   display: flex;
   flex-direction: column;
@@ -114,7 +115,6 @@
   z-index: 2;
 }
 
-/* Бір жапсырма: әріп/сан арасында шекара жоқ, тек сыртқы контур */
 .categorySwitch {
   display: flex;
   flex-wrap: nowrap;
@@ -122,60 +122,70 @@
   align-items: stretch;
   gap: 0;
   width: 100%;
-  max-width: 420px;
+  max-width: min(338px, calc(100% - 24px));
   margin: 0 auto clamp(10px, 2vw, 16px);
-  padding: 5px;
+  padding: 4px;
   position: relative;
   z-index: 2;
+  isolation: isolate;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--menu-peach) 10%, #f7f4ef);
-  border: 1px solid color-mix(in srgb, var(--menu-peach) 22%, rgba(90, 70, 55, 0.11));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 6px 18px rgba(70, 55, 45, 0.07);
+  background: transparent;
+  border: 1px solid rgba(90, 70, 55, 0.1);
   box-sizing: border-box;
 }
 
+.categoryThumb {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: 999px;
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform;
+  background: #ff5c38;
+}
+
 .categoryBtn {
+  position: relative;
+  z-index: 1;
   flex: 1 1 50%;
   min-width: 0;
   margin: 0;
-  padding: 10px 14px;
+  padding: 9px 10px;
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: color-mix(in srgb, var(--menu-sage) 42%, #4f433a);
+  color: #5c3018;
   font: inherit;
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 0.96rem;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    background 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
+  transition: color 0.16s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
 .categoryBtnActive {
-  background: color-mix(in srgb, var(--menu-peach) 24%, #fff6f0);
-  color: #261c18;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 2px 0 color-mix(in srgb, var(--menu-peach) 25%, rgba(100, 70, 55, 0.12)),
-    0 8px 16px color-mix(in srgb, var(--menu-peach) 18%, rgba(80, 55, 45, 0.12));
+  color: #fffefb;
 }
 
 @media (hover: hover) {
   .categoryBtn:not(.categoryBtnActive):hover {
-    background: color-mix(in srgb, #fff 38%, transparent);
-    color: #3a3028;
+    color: #3d1f0f;
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .categoryBtnActive:hover {
+    color: #fff;
   }
 }
 
 .categoryBtn:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--menu-peach) 45%, var(--menu-sage));
-  outline-offset: 3px;
+  outline: 3px solid color-mix(in srgb, #ff5c38 58%, #fff);
+  outline-offset: 2px;
 }
 
 .cardLevel {
@@ -196,88 +206,6 @@
   line-height: 1.3;
   color: color-mix(in srgb, var(--menu-sage) 45%, #6a5d55);
   max-width: 18ch;
-}
-
-.perfPanel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 420px;
-  margin: clamp(4px, 1.5vw, 10px) auto clamp(8px, 2.2vw, 14px);
-  padding: 0 clamp(8px, 3vw, 16px);
-  position: relative;
-  z-index: 2;
-}
-
-.perfTitle {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--menu-sage) 42%, #4a3d35);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.perfModes {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--menu-peach) 9%, #f5f2ec);
-  border: 1px solid color-mix(in srgb, var(--menu-peach) 20%, rgba(90, 70, 55, 0.09));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 6px 16px rgba(70, 55, 45, 0.08);
-}
-
-.perfBtn {
-  min-width: 56px;
-  height: 32px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 0 10px;
-  background: transparent;
-  color: color-mix(in srgb, var(--menu-peach) 12%, #4a3d35);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease,
-    border-color 0.16s ease,
-    transform 0.12s ease;
-}
-
-.perfBtnActive {
-  background: color-mix(in srgb, var(--menu-peach) 20%, #fff5f0);
-  color: color-mix(in srgb, var(--menu-peach) 8%, #1e1815);
-  border-color: color-mix(in srgb, var(--menu-peach) 35%, rgba(90, 70, 55, 0.12));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 2px 0 color-mix(in srgb, var(--menu-peach) 22%, rgba(100, 80, 65, 0.12)),
-    0 6px 14px color-mix(in srgb, var(--menu-peach) 15%, rgba(70, 55, 45, 0.14));
-}
-
-@media (hover: hover) {
-  .perfBtn:not(.perfBtnActive):hover {
-    color: #352a24;
-    background: color-mix(in srgb, var(--menu-lilac) 8%, rgba(255, 255, 255, 0.55));
-  }
-}
-
-.perfBtn:not(.perfBtnActive):active {
-  transform: scale(0.97);
-}
-
-.perfHint {
-  font-size: 0.72rem;
-  color: color-mix(in srgb, var(--menu-lilac) 18%, rgba(72, 56, 45, 0.58));
 }
 
 /* Жол бойынша сырғыту түймелері (‹ ›) */
@@ -322,8 +250,6 @@
   scroll-padding-block: 16px;
   scroll-padding-inline: 0;
   scrollbar-color: color-mix(in srgb, var(--menu-sage) 28%, rgba(120, 90, 70, 0.22)) transparent;
-  border-radius: clamp(16px, 3vw, 22px);
-  background: color-mix(in srgb, var(--menu-lilac) 5%, #fdfaf8);
 }
 
 .trackWrapVertical .track::-webkit-scrollbar {
@@ -420,11 +346,9 @@
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--menu-lilac) 7%, #fcf9f6);
-  border: 1px solid color-mix(in srgb, var(--menu-sage) 22%, rgba(90, 70, 55, 0.09));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 10px 32px color-mix(in srgb, var(--menu-lilac) 5%, rgba(80, 60, 45, 0.07));
+  background: transparent;
+  border: none;
+  box-shadow: none;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--menu-sage) 35%, rgba(80, 60, 45, 0.22)) transparent;
 }
@@ -446,16 +370,13 @@
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--menu-sage) 20%, rgba(90, 70, 55, 0.1));
   border-radius: 13px;
-  background: #fffefb;
+  background: #fffefc;
   color: color-mix(in srgb, var(--menu-sage) 8%, #453930);
   font-size: 1.08rem;
   font-weight: 800;
   font-family: var(--font-display-kz);
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 2px 0 rgba(60, 48, 38, 0.08),
-    0 4px 10px rgba(70, 55, 45, 0.06);
+  box-shadow: 0 1px 3px rgba(70, 55, 45, 0.08);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -470,10 +391,7 @@
   .filterBtn:hover:not(.filterBtnOn) {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--menu-peach) 28%, rgba(90, 70, 55, 0.12));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      0 3px 0 color-mix(in srgb, var(--menu-sage) 12%, rgba(60, 48, 38, 0.09)),
-      0 8px 16px color-mix(in srgb, var(--menu-peach) 6%, rgba(80, 60, 45, 0.1));
+    box-shadow: 0 2px 8px rgba(70, 55, 45, 0.1);
   }
 }
 
@@ -483,12 +401,9 @@
 
 .filterBtnOn {
   color: #fff;
-  border-color: rgba(0, 0, 0, 0.12);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 2px 0 rgba(0, 0, 0, 0.15),
-    0 8px 18px rgba(0, 0, 0, 0.14);
+  border-color: rgba(0, 0, 0, 0.1);
+  text-shadow: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Әріп түстері */
@@ -509,7 +424,6 @@
   background: #546e7a;
 }
 
-.perfBtn:focus-visible,
 .horizScrollBtn:focus-visible,
 .filterBtn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--menu-peach) 55%, var(--menu-sage));
@@ -573,6 +487,7 @@
   outline-offset: 2px;
 }
 
+/* Сөз/деңгей карточкалары: .filter сияқты бір «жол» стилі */
 .track {
   flex: 1;
   min-width: 0;
@@ -583,14 +498,16 @@
   overflow-y: hidden;
   /* pan-x: алғашқы тап скролл жестіне жұмсалмай, картадағы click тұрақты болуы үшін */
   touch-action: pan-x;
-  padding: 8px 8px 20px;
+  padding: 10px 10px 22px;
   scroll-snap-type: x mandatory;
   scroll-padding-inline: clamp(20px, 6vw, 40px);
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--menu-sage) 28%, rgba(120, 90, 70, 0.22)) transparent;
   border-radius: clamp(16px, 3vw, 22px);
-  background: color-mix(in srgb, var(--menu-lilac) 5%, #fdfaf8);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .track::-webkit-scrollbar {
@@ -609,13 +526,20 @@
   min-height: 148px;
   padding: 0;
   border: none;
-  border-radius: 24px;
+  border-radius: clamp(16px, 2.6vw, 20px);
   cursor: pointer;
   text-align: center;
   font: inherit;
   background: transparent;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.18s ease;
+}
+
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-3px);
+  }
 }
 
 .card:focus-visible {
@@ -634,17 +558,20 @@
   justify-content: center;
   min-height: 148px;
   padding: 20px 16px 18px;
-  border-radius: 24px;
-  background: var(--card-surface, #fffefb);
-  border: 1.5px solid
+  border-radius: clamp(14px, 2.4vw, 18px);
+  background: color-mix(
+    in srgb,
+    #fffefb 10%,
+    var(--card-surface, var(--entry-menu-bg))
+  );
+  border: 1px solid
     var(
       --card-border,
       color-mix(in srgb, var(--menu-sage) 14%, rgba(90, 70, 55, 0.12))
     );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 10px 26px var(--card-glow, rgba(80, 60, 45, 0.08)),
-    0 2px 0 rgba(255, 255, 255, 0.55) inset;
+    0 3px 12px var(--card-glow, rgba(75, 58, 45, 0.07)),
+    0 1px 0 rgba(90, 70, 55, 0.04);
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease,
@@ -659,9 +586,8 @@
       rgba(90, 70, 55, 0.14)
     );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.98),
-      0 14px 32px var(--card-glow, rgba(80, 60, 45, 0.12)),
-      0 3px 0 rgba(255, 255, 255, 0.65) inset;
+      0 6px 18px var(--card-glow, rgba(75, 58, 45, 0.1)),
+      0 1px 0 rgba(90, 70, 55, 0.05);
   }
 }
 
@@ -678,10 +604,86 @@
 
 .cardEmojiImg {
   display: inline-block;
+  width: clamp(2.4rem, 10vw, 3rem);
+  height: clamp(2.4rem, 10vw, 3rem);
+  object-fit: contain;
+  vertical-align: middle;
   filter: var(
     --card-emoji-shadow,
     drop-shadow(0 3px 8px rgba(60, 48, 38, 0.14))
   );
+}
+
+/* Сандар: деңгей мәтіні бір биіктікте, сурет ортасы тең, тақырып астына бекітілген */
+.card[data-category="digits"] .cardInner {
+  justify-content: flex-start;
+  background: color-mix(
+    in srgb,
+    var(--card-accent, var(--menu-peach)) 8%,
+    rgba(255, 254, 252, 0.99)
+  );
+}
+
+.card[data-category="digits"] .cardLevel {
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 2.6rem;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-size: 0.62rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--card-accent, var(--menu-lilac));
+  background: color-mix(
+    in srgb,
+    var(--card-accent) 14%,
+    rgba(255, 255, 255, 0.94)
+  );
+  border: 1px solid color-mix(in srgb, var(--card-accent) 32%, rgba(90, 70, 55, 0.1));
+}
+
+.card[data-category="digits"] .cardEmoji {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+  margin-top: 10px;
+  min-height: clamp(3rem, 14vw, 3.6rem);
+}
+
+.card[data-category="digits"] .cardEmojiImg {
+  width: clamp(2.6rem, 12vw, 3.25rem);
+  height: clamp(2.6rem, 12vw, 3.25rem);
+}
+
+.card[data-category="digits"] .cardWord {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 10px;
+  min-height: 2.85em;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.22;
+  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 50%, #231d18);
+}
+
+.card[data-category="letters"] .cardInner {
+  background: color-mix(
+    in srgb,
+    var(--card-accent, var(--menu-peach)) 11%,
+    color-mix(in srgb, #fffefb 10%, var(--card-surface, var(--entry-menu-bg)))
+  );
+}
+
+.card[data-category="letters"] .cardWord {
+  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 54%, #1e1815);
 }
 
 .cardWord {
@@ -693,7 +695,6 @@
   color: color-mix(in srgb, var(--menu-sage) 8%, #2a221c);
   line-height: 1.2;
   word-break: break-word;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .cardComingSoon {
@@ -703,11 +704,9 @@
 }
 
 .cardComingSoon .cardInner {
-  background: color-mix(in srgb, var(--menu-lilac) 6%, #ebe6df);
+  background: color-mix(in srgb, #fffefb 8%, var(--entry-menu-bg));
   border-color: color-mix(in srgb, var(--menu-sage) 12%, rgba(90, 70, 55, 0.1));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 6px 18px rgba(80, 60, 45, 0.06);
+  box-shadow: 0 3px 12px rgba(75, 58, 45, 0.06);
 }
 
 .cardComingSoonText {
@@ -829,12 +828,6 @@
 @media (orientation: portrait) and (max-width: 1024px) {
   .filterWrap {
     max-width: 100%;
-  }
-
-  .perfBtn {
-    min-width: 52px;
-    height: 34px;
-    font-size: 0.76rem;
   }
 }
 

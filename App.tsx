@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -13,7 +14,11 @@ import {
   preloadSoundsForWord,
   unlockAudio,
   readBackgroundMusicPreference,
+  readBackgroundMusicVolume,
   setBackgroundMusicEnabled,
+  setBackgroundMusicVolume,
+  BACKGROUND_MUSIC_VOLUME_MAX,
+  playDigitLevelIntroSound,
 } from "./utils/sound";
 import { isFullscreenSupported, toggleFullscreen, fullscreenElement } from "./utils/fullscreen";
 import { PuzzleBoard } from "./components/PuzzleBoard";
@@ -30,9 +35,84 @@ import type { WordDef } from "./types";
 
 type PlaySource = "letters" | "digits";
 
-/** Сан бөлімі: 2 (санау) және 3 (сандар реті) — әр деңгейді 3 рет шешкенше келесіге өтпейді. */
-const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3]);
+/** Сан бөлімі: санау, сандар реті, қосу, азайту — әр деңгейді 3 рет шешкенше келесіге өтпейді. */
+const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3, 4]);
 const DIGIT_MULTI_ROUND_TOTAL = 3;
+
+const bgMusicControlBtnStyle: CSSProperties = {
+  padding: "7px 12px",
+  fontSize: 18,
+  lineHeight: 1,
+  borderRadius: 10,
+  border: "none",
+  background: "rgba(255,255,255,0.85)",
+  backdropFilter: "blur(6px)",
+  color: "#555",
+  cursor: "pointer",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+};
+
+function BackgroundMusicControls({
+  on,
+  volume,
+  onToggle,
+  onVolumeChange,
+  buttonStyle,
+}: {
+  on: boolean;
+  volume: number;
+  onToggle: () => void;
+  onVolumeChange: (v: number) => void;
+  buttonStyle?: CSSProperties;
+}) {
+  const btnStyle = { ...bgMusicControlBtnStyle, ...buttonStyle };
+  const pct = Math.round(
+    (volume / BACKGROUND_MUSIC_VOLUME_MAX) * 100
+  );
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        maxWidth: "100%",
+      }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        style={btnStyle}
+        title={
+          on
+            ? "Фондық музыканы сөндіру"
+            : "Фондық музыканы қосу"
+        }
+        aria-pressed={on}
+        aria-label={on ? "Фонды сөндіру" : "Фонды қосу"}
+      >
+        {on ? "🔊" : "🔇"}
+      </button>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={pct}
+        onChange={e => {
+          const p = Number(e.target.value) / 100;
+          onVolumeChange(p * BACKGROUND_MUSIC_VOLUME_MAX);
+        }}
+        aria-label="Фондық музыка дыбыс деңгейі"
+        title="Дыбыс деңгейі"
+        style={{
+          width: "min(120px, 30vw)",
+          height: 32,
+          accentColor: "#c2410c",
+          cursor: "pointer",
+        }}
+      />
+    </div>
+  );
+}
 
 function readGameLandscapeShort(): boolean {
   if (typeof window === "undefined") return false;
@@ -66,6 +146,10 @@ function GameSession({
   const templateWord = levels[wordIdx % levels.length];
   const [digitCountReplayKey, setDigitCountReplayKey] = useState(0);
   const [digitCountRoundsDone, setDigitCountRoundsDone] = useState(0);
+  /** 3 тапсырмалы деңгей: дұрыс жауап қайталанбасын (санау, қосу, азайту). */
+  const [digitRoundExcludeAnswers, setDigitRoundExcludeAnswers] = useState<
+    number[]
+  >([]);
 
   const idx = wordIdx % levels.length;
   const isDigitMultiRoundLevel =
@@ -75,10 +159,12 @@ function GameSession({
     if (!isDigitMultiRoundLevel) {
       setDigitCountRoundsDone(0);
       setDigitCountReplayKey(0);
+      setDigitRoundExcludeAnswers([]);
       return;
     }
     setDigitCountRoundsDone(0);
     setDigitCountReplayKey(0);
+    setDigitRoundExcludeAnswers([]);
   }, [isDigitMultiRoundLevel, idx]);
 
   const digitOrderRoundForResolve =
@@ -91,8 +177,18 @@ function GameSession({
       resolveDigitLevelForPlay(templateWord, {
         digitOrderRound:
           digitOrderRoundForResolve >= 0 ? digitOrderRoundForResolve : undefined,
+        excludeAnswers: isDigitMultiRoundLevel
+          ? digitRoundExcludeAnswers
+          : undefined,
       }),
-    [templateWord, wordIdx, digitCountReplayKey, digitOrderRoundForResolve]
+    [
+      templateWord,
+      wordIdx,
+      digitCountReplayKey,
+      digitOrderRoundForResolve,
+      isDigitMultiRoundLevel,
+      digitRoundExcludeAnswers,
+    ]
   );
   const boardDims = useBoardDimensions(
     currentWord.dragLetters?.length ?? currentWord.letters.length
@@ -103,6 +199,13 @@ function GameSession({
   useEffect(() => {
     preloadSoundsForWord(currentWord);
   }, [currentWord]);
+
+  /** Сан 1–2 деңгей: кіріс нұсқаулары (numbers/comment/денгей*.mp3). */
+  useEffect(() => {
+    if (sessionKey !== "digits") return;
+    const ln = levels[wordIdx % levels.length].levelNumber;
+    playDigitLevelIntroSound(ln);
+  }, [sessionKey, wordIdx, levels]);
 
   /** Оптимизация: тұрақты колбэк сілтемелері — PuzzleBoard артық ререндерден сақталады. */
   const onNavigatePrev = useCallback(
@@ -141,6 +244,18 @@ function GameSession({
       isDigitMultiRoundLevel &&
       digitCountRoundsDone < DIGIT_MULTI_ROUND_TOTAL - 1
     ) {
+      const fromCount = currentWord.objectHint?.count;
+      const eq = currentWord.equationHint;
+      const fromAdd =
+        eq != null && eq.op !== "subtract"
+          ? eq.a + eq.b
+          : undefined;
+      const fromSubtract =
+        eq != null && eq.op === "subtract" ? eq.a - eq.b : undefined;
+      const toExclude = fromCount ?? fromAdd ?? fromSubtract;
+      if (toExclude != null && Number.isFinite(toExclude)) {
+        setDigitRoundExcludeAnswers(prev => [...prev, toExclude]);
+      }
       setDigitCountRoundsDone(r => r + 1);
       setDigitCountReplayKey(k => k + 1);
       return;
@@ -149,7 +264,12 @@ function GameSession({
       setDigitCountRoundsDone(0);
     }
     onNavigateNext();
-  }, [digitCountRoundsDone, isDigitMultiRoundLevel, onNavigateNext]);
+  }, [
+    currentWord,
+    digitCountRoundsDone,
+    isDigitMultiRoundLevel,
+    onNavigateNext,
+  ]);
 
   return (
     <>
@@ -174,6 +294,7 @@ function GameSession({
         emoji={currentWord.emoji}
         nextButtonLabel={winNextButtonLabel}
         onNext={onWinNext}
+        variant={sessionKey === "digits" ? "digits" : "letters"}
       />
     </>
   );
@@ -190,6 +311,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isFs, setIsFs] = useState(false);
   const [bgMusicOn, setBgMusicOn] = useState(readBackgroundMusicPreference);
+  const [bgMusicVolume, setBgMusicVolume] = useState(readBackgroundMusicVolume);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
@@ -256,6 +378,12 @@ export default function App() {
     setBgMusicOn(next);
     setBackgroundMusicEnabled(next);
   }, [bgMusicOn]);
+
+  const handleBackgroundMusicVolume = useCallback((v: number) => {
+    unlockAudio();
+    setBackgroundMusicVolume(v);
+    setBgMusicVolume(v);
+  }, []);
 
   const handlePickWord = useCallback(
     (w: WordDef, source: PlaySource) => {
@@ -326,30 +454,13 @@ export default function App() {
             zIndex: 1000,
           }}
         >
-          <button
-            type="button"
-            onClick={toggleBackgroundMusic}
-            style={{
-              padding: "7px 12px",
-              fontSize: 18,
-              lineHeight: 1,
-              borderRadius: 10,
-              border: "none",
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(6px)",
-              color: "#555",
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-            }}
-            title={
-              bgMusicOn
-                ? "Фондық музыканы сөндіру"
-                : "Фондық музыканы қосу"
-            }
-            aria-pressed={bgMusicOn}
-          >
-            {bgMusicOn ? "🔊" : "🔇"}
-          </button>
+          <BackgroundMusicControls
+            on={bgMusicOn}
+            volume={bgMusicVolume}
+            onToggle={toggleBackgroundMusic}
+            onVolumeChange={handleBackgroundMusicVolume}
+            buttonStyle={{ background: "rgba(255,255,255,0.92)" }}
+          />
         </div>
       </>
     );
@@ -374,31 +485,13 @@ export default function App() {
             onPickWord={handlePickWord}
           />
 
-          <div style={{ position: "fixed", top: 14, right: 16, display: "flex", gap: 8, zIndex: 999 }}>
-            <button
-              type="button"
-              onClick={toggleBackgroundMusic}
-              style={{
-                padding: "7px 12px",
-                fontSize: 18,
-                lineHeight: 1,
-                borderRadius: 10,
-                border: "none",
-                background: "rgba(255,255,255,0.85)",
-                backdropFilter: "blur(6px)",
-                color: "#555",
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-              }}
-              title={
-                bgMusicOn
-                  ? "Фондық музыканы сөндіру"
-                  : "Фондық музыканы қосу"
-              }
-              aria-pressed={bgMusicOn}
-            >
-              {bgMusicOn ? "🔊" : "🔇"}
-            </button>
+          <div style={{ position: "fixed", top: 14, right: 16, display: "flex", gap: 8, alignItems: "center", zIndex: 999 }}>
+            <BackgroundMusicControls
+              on={bgMusicOn}
+              volume={bgMusicVolume}
+              onToggle={toggleBackgroundMusic}
+              onVolumeChange={handleBackgroundMusicVolume}
+            />
             {isFullscreenSupported() && (
               <button
                 onClick={() => toggleFullscreen()}
@@ -448,30 +541,12 @@ export default function App() {
               zIndex: 999,
             }}
           >
-            <button
-              type="button"
-              onClick={toggleBackgroundMusic}
-              style={{
-                padding: "7px 12px",
-                fontSize: 18,
-                lineHeight: 1,
-                borderRadius: 10,
-                border: "none",
-                background: "rgba(255,255,255,0.85)",
-                backdropFilter: "blur(6px)",
-                color: "#555",
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-              }}
-              title={
-                bgMusicOn
-                  ? "Фондық музыканы сөндіру"
-                  : "Фондық музыканы қосу"
-              }
-              aria-pressed={bgMusicOn}
-            >
-              {bgMusicOn ? "🔊" : "🔇"}
-            </button>
+            <BackgroundMusicControls
+              on={bgMusicOn}
+              volume={bgMusicVolume}
+              onToggle={toggleBackgroundMusic}
+              onVolumeChange={handleBackgroundMusicVolume}
+            />
           </div>
           <div
             style={{
