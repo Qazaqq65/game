@@ -1,5 +1,6 @@
 import type { LetterDef } from "./../types";
 import { letterPresetKey } from "../utils/letterPresetKey";
+import { LetterDragGlyph } from "./LetterDragGlyph";
 import { MonsterZh } from "./MonsterZh";
 import { MonsterLetter } from "./MonsterLetter";
 import { MonsterLetterMeltingI } from "./MonsterLetterMeltingI";
@@ -24,6 +25,10 @@ export function Letter({
   animState = "idle",
   isLowEnd = false,
 }: LetterProps) {
+  if (letter.face === "off") {
+    return <LetterDragGlyph letter={letter} size={size} isSnapped={isSnapped} />;
+  }
+
   const { ch, color, pat, pc } = letter;
   const noPattern = SOLID_FILL_LETTERS.has(letterPresetKey(ch));
 

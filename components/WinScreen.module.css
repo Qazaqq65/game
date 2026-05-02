@@ -21,6 +21,13 @@
 }
 
 /* Толық экран: document.body порталы, тақтадан тыс — төменгі/үстіңгі панельдің үстінде */
+/* Жеңіс overlay жабылғанда DOM-да қалдыру — Lottie қайта mount болмасын */
+.rootHidden {
+  display: none !important;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 .root {
   position: fixed;
   inset: 0;

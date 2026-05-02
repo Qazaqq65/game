@@ -233,7 +233,7 @@ export default function LoginPage({ onBack, onSuccess, isModal = false }) {
           </span>
         </label>
         {!accepted && (
-          <p style={s.hint}>☝️ Жалғастыру үшін белгі қойыңыз</p>
+          <p style={s.hint}> Жалғастыру үшін белгі қойыңыз</p>
         )}
       </FadeUp>
 
@@ -254,7 +254,7 @@ export default function LoginPage({ onBack, onSuccess, isModal = false }) {
             <span className="lp-social-strip" style={{ ...s.socialStrip, background: "#229ED9" }} />
           </a>
           <a
-            href={accepted ? "https://wa.me/" : undefined}
+            href={accepted ? "https://wa.me/77087257147" : undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="lp-social-card"
@@ -262,7 +262,7 @@ export default function LoginPage({ onBack, onSuccess, isModal = false }) {
           >
             <img src="/whatsapp-svgrepo-com.svg" alt="WhatsApp" width={48} height={48} style={{ borderRadius: 12 }} />
             <span style={s.socialName}>WhatsApp</span>
-            <span style={{ ...s.socialHandle, color: "#25d366" }}>Жазу</span>
+            <span style={{ ...s.socialHandle, color: "#25d366" }}>+7 708 725 71 47</span>
             <span className="lp-social-strip" style={{ ...s.socialStrip, background: "#25d366" }} />
           </a>
         </div>

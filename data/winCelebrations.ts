@@ -2,7 +2,7 @@
  * Әр сөз үшін жеңіс экранындағы «ерекше сәт» (Lottie public/lottie/ ішінде).
  * Кілт — сөздің БАС ӘРІППЕН жазылуы (words.ts сияқты).
  */
-export type WinCelebrationScene = "savanna" | "apple" | "child";
+export type WinCelebrationScene = "apple" | "child";
 
 export interface WinCelebrationDef {
   /** public/lottie/ файл атауы (бос орын болса да болады). */
@@ -13,20 +13,21 @@ export interface WinCelebrationDef {
   videoFile?: string;
   /** public/music/ ішіндегі mp3 (мысалы apple.mp3). */
   musicFile?: string;
-  /** Ку сындырып қашады — арыстанның алдында жүгіреді. */
-  chaseLizardFile?: string;
   scene: WinCelebrationScene;
   /** Қосымша позиция/өлшем түрлендірулері үшін визуал нұсқа. */
-  actorVariant?: "virus" | "flower" | "rocket" | "dogpair" | "dopStaticMoving";
+  actorVariant?: "virus" | "flower" | "rocket" | "dogpair";
   /** Қысқа реңк хабарламасы (қалағанда бос). */
   tagline?: string;
-  /** savanna: алмадағыдай жасыл рамка ішінде, бірақ ку қуған парад анимациясы. */
-  framedChase?: boolean;
   /** Авто «Келесі сөз» уақытына қосу (теріс — қысқарту), мс. Тек қажетті сөздерде. */
   winAutoAdvanceDeltaMs?: number;
 }
 
 export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
+  АРА: {
+    lottieFile: "bee.json",
+    scene: "apple",
+    tagline: "Ара ызыңдап ұшып жүр!",
+  },
   ӘТЕШ: {
     lottieFile: "rooster.json",
     scene: "apple",
@@ -40,15 +41,7 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     tagline: "Алма сахнаға шықты!",
     winAutoAdvanceDeltaMs: 1000,
   },
-  АРЫСТАН: {
-    lottieFile: "Lion Running.json",
-    scene: "savanna",
-    chaseLizardFile: "Lizard running Lottie Animation.json",
-    framedChase: true,
-    musicFile: "Lionmusic.mp3",
-    tagline: "Арыстан жүгіріп келеді!",
-    winAutoAdvanceDeltaMs: -6000,
-  },
+  // АРЫСТАН сөзін алып тастадық (қазір ол орнына АРА қолданылады).
   БАЛА: {
     videoFile: "child.mp4",
     scene: "child",
@@ -69,12 +62,8 @@ export const WIN_CELEBRATIONS: Record<string, WinCelebrationDef> = {
     tagline: "Гүл жайқалып тұр!",
   },
   ДОП: {
-    /** ball.json тұрады, ball2.json парадпен қана қозғалады. */
     lottieFile: "ball.json",
-    chaseLizardFile: "ball2.json",
-    scene: "savanna",
-    framedChase: true,
-    actorVariant: "dopStaticMoving",
+    scene: "apple",
     tagline: "Доп секіріп тұр!",
   },
   ЖЕР: {

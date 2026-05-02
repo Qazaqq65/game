@@ -2,6 +2,28 @@ import { useCallback, useLayoutEffect, useState } from "react";
 
 const GAP_X = 10;
 const ABS_MIN_TILE = 54;
+
+/** Көп слот бір қатарда: `fitTileSizeToBoard` ↔ `computeSlotPositions` gapX синхроны. */
+export function layoutGapXForCount(letterCount: number): number {
+  const n = Math.max(1, letterCount);
+  if (n >= 10) return 2;
+  if (n >= 9) return 3;
+  if (n >= 8) return 4;
+  if (n >= 7) return 6;
+  return GAP_X;
+}
+
+/**
+ * Ұялыда 10 таңба: 54px минимум жолға сымайды — төменгі шекке дейін кішірейтуге рұқсат.
+ */
+export function minTileSizeFloorForCount(letterCount: number): number {
+  const n = Math.max(1, letterCount);
+  if (n >= 10) return 26;
+  if (n >= 9) return 30;
+  if (n >= 8) return 34;
+  return ABS_MIN_TILE;
+}
+
 const MAX_TILE = 108;
 const MAX_W = 800;
 const MAX_H = 580;
@@ -34,16 +56,34 @@ function readViewportSize(): { vw: number; vh: number } {
 
 /**
  * Scatter аймақтары үшін минималды биіктік (canvas.ts zones).
+ * twoRow: слоттар екі қатарда — биіктікке қосымша талап.
  */
 function minHeightForTile(
   tileSize: number,
-  mode: "normal" | "compact" | "tight"
+  mode: "normal" | "compact" | "tight",
+  twoRowSlots = false
 ): number {
   const pad = mode === "tight" ? 42 : mode === "compact" ? 52 : 68;
-  return Math.ceil(tileSize * 2 + pad);
+  const rowGap = 12;
+  if (!twoRowSlots) return Math.ceil(tileSize * 2 + pad);
+  return Math.ceil(tileSize * 3 + rowGap + pad);
 }
 
 export type BoardMinHeightMode = "normal" | "compact" | "tight";
+
+/**
+ * Ұялы портретте ұзын жол (8+ слот) екінің қатарына: плитка іріленеді.
+ */
+export function shouldUseTwoRowSlotLayout(
+  letterCount: number,
+  boardW: number,
+  boardH: number
+): boolean {
+  if (typeof window === "undefined") return false;
+  if (letterCount < 8) return false;
+  if (!window.matchMedia("(pointer: coarse)").matches) return false;
+  return boardH >= boardW - 2;
+}
 
 function minHeightModeFromViewport(vw: number, vh: number): BoardMinHeightMode {
   const isPortrait = vh >= vw;
@@ -111,31 +151,39 @@ export function fitTileSizeToBoard(
   const n = Math.max(1, letterCount);
   const w = Math.max(240, boardW);
   const h = Math.max(180, boardH);
-  const insetX = boardInsetXForTouch(n);
+  const twoRow = shouldUseTwoRowSlotLayout(n, w, h);
+  let insetX = boardInsetXForTouch(n);
+  if (n >= 10 && !twoRow) insetX = Math.max(6, insetX - 6);
+  const maxInRow = twoRow ? Math.ceil(n / 2) : n;
+  const gap = layoutGapXForCount(maxInRow);
+  let floorMin = minTileSizeFloorForCount(n);
+  if (twoRow && n >= 8) {
+    floorMin = Math.max(42, floorMin);
+  }
   let maxTile = maxTileForMinHeightMode(minHMode, n);
   const touchCap = touchLandscapeTileCap(w, h, n);
   if (touchCap !== null) maxTile = Math.min(maxTile, touchCap);
 
   let tileSize = Math.floor(
-    (w - insetX * 2 - (n - 1) * GAP_X) / n
+    (w - insetX * 2 - (maxInRow - 1) * gap) / maxInRow
   );
-  tileSize = Math.min(maxTile, Math.max(ABS_MIN_TILE, tileSize));
+  tileSize = Math.min(maxTile, Math.max(floorMin, tileSize));
 
-  while (tileSize > ABS_MIN_TILE) {
-    const rowW = n * tileSize + (n - 1) * GAP_X + insetX * 2;
+  while (tileSize > floorMin) {
+    const rowW = maxInRow * tileSize + (maxInRow - 1) * gap + insetX * 2;
     if (rowW <= w) break;
     tileSize -= 1;
   }
 
   while (
-    tileSize > ABS_MIN_TILE &&
-    minHeightForTile(tileSize, minHMode) > h
+    tileSize > floorMin &&
+    minHeightForTile(tileSize, minHMode, twoRow) > h
   ) {
     tileSize -= 1;
   }
 
-  while (tileSize > ABS_MIN_TILE) {
-    const rowW = n * tileSize + (n - 1) * GAP_X + insetX * 2;
+  while (tileSize > floorMin) {
+    const rowW = maxInRow * tileSize + (maxInRow - 1) * gap + insetX * 2;
     if (rowW <= w) break;
     tileSize -= 1;
   }

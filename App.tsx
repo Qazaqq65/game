@@ -11,22 +11,28 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./firebase";
 import {
   preloadSoundsForWord,
-  preloadWordPronunciations,
-  prefetchWinCelebrationMusic,
   unlockAudio,
+  readBackgroundMusicPreference,
+  setBackgroundMusicEnabled,
 } from "./utils/sound";
-import { prefetchCelebrationAssets } from "./utils/celebrationAssets";
-import { winCelebrationForWord } from "./data/winCelebrations";
 import { isFullscreenSupported, toggleFullscreen, fullscreenElement } from "./utils/fullscreen";
 import { PuzzleBoard } from "./components/PuzzleBoard";
+import { WinScreen } from "./components/WinScreen";
 import { EntryMenu } from "./components/EntryMenu";
 import LoginPage from "./components/LoginPage";
 import {
   WORDS,
   WORD_MENU_GROUPS,
 } from "./data/words";
+import { DIGIT_LEVELS, DIGIT_ORDER_LEVEL_INDEX, resolveDigitLevelForPlay } from "./data/digitLevels";
 import { useBoardDimensions } from "./hooks/useBoardDimensions";
 import type { WordDef } from "./types";
+
+type PlaySource = "letters" | "digits";
+
+/** Сан бөлімі: 2 (санау) және 3 (сандар реті) — әр деңгейді 3 рет шешкенше келесіге өтпейді. */
+const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3]);
+const DIGIT_MULTI_ROUND_TOTAL = 3;
 
 function readGameLandscapeShort(): boolean {
   if (typeof window === "undefined") return false;
@@ -36,39 +42,20 @@ function readGameLandscapeShort(): boolean {
   return w > h && h <= 460;
 }
 
-function scheduleIdleWork(fn: () => void): number {
-  const ric = (
-    window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    }
-  ).requestIdleCallback;
-  if (typeof ric === "function") {
-    return ric(fn, { timeout: 2200 });
-  }
-  return window.setTimeout(fn, 250);
-}
-
-function cancelIdleWork(id: number): void {
-  const cic = (
-    window as Window & { cancelIdleCallback?: (id: number) => void }
-  ).cancelIdleCallback;
-  if (typeof cic === "function") {
-    cic(id);
-  } else {
-    window.clearTimeout(id);
-  }
-}
-
 /** Тек ойын экранында — listenерлер мен өлшем есебі менюмен бірге жүктелмейді */
 function GameSession({
   wordIdx,
   setWordIdx,
   onHome,
+  levels,
+  sessionKey,
 }: {
   wordIdx: number;
   setWordIdx: Dispatch<SetStateAction<number>>;
   onHome: () => void;
+  levels: WordDef[];
+  /** letters | digits — PuzzleBoard кэшін араластырмау */
+  sessionKey: PlaySource;
 }) {
   // Android Chrome pull-to-refresh және iOS bounce эффектін өшіру
   useEffect(() => {
@@ -76,67 +63,45 @@ function GameSession({
     document.addEventListener("touchmove", prevent, { passive: false });
     return () => document.removeEventListener("touchmove", prevent);
   }, []);
-  const currentWord: WordDef = WORDS[wordIdx % WORDS.length];
-  const boardDims = useBoardDimensions(currentWord.letters.length);
-  const n = WORDS.length;
-  const idx = wordIdx % n;
+  const templateWord = levels[wordIdx % levels.length];
+  const [digitCountReplayKey, setDigitCountReplayKey] = useState(0);
+  const [digitCountRoundsDone, setDigitCountRoundsDone] = useState(0);
 
-  /**
-   * Lazy ассеттер. Стратегия — «just-in-time»:
-   *  • Ағымдағы сөздің ӘРІП дыбыстары — бірден (drag-те бірден ойнау керек,
-   *    кідіруге болмайды).
-   *  • Сөздің толық дыбыстауы (Алма.MP3 …), Lottie ассеттері және celebration
-   *    музыкасы — пайдаланушы 1 буқваға келгенде ғана жүктеледі
-   *    (handleAlmostWin → onAlmostWin → префетч). Егер тастап кетсе — нөл
-   *    артық трафик. Қысқа сөздер (≤2 буква) үшін almost-win тым кеш —
-   *    ондайларда idle-те қауіпсіз префетч.
-   *  • Келесі сөздің тек ӘРІП дыбыстары idle-те («Алға →» кідірісі
-   *    болмасын). Қалғаны (mp3 сөз + Lottie + музыка) сол сөзге өткенде
-   *    almost-win-те жүктеледі.
-   */
+  const idx = wordIdx % levels.length;
+  const isDigitMultiRoundLevel =
+    sessionKey === "digits" && DIGIT_MULTI_ROUND_LEVEL_INDICES.has(idx);
+
+  useEffect(() => {
+    if (!isDigitMultiRoundLevel) {
+      setDigitCountRoundsDone(0);
+      setDigitCountReplayKey(0);
+      return;
+    }
+    setDigitCountRoundsDone(0);
+    setDigitCountReplayKey(0);
+  }, [isDigitMultiRoundLevel, idx]);
+
+  const digitOrderRoundForResolve =
+    sessionKey === "digits" && idx === DIGIT_ORDER_LEVEL_INDEX
+      ? digitCountRoundsDone
+      : -1;
+
+  const currentWord = useMemo(
+    () =>
+      resolveDigitLevelForPlay(templateWord, {
+        digitOrderRound:
+          digitOrderRoundForResolve >= 0 ? digitOrderRoundForResolve : undefined,
+      }),
+    [templateWord, wordIdx, digitCountReplayKey, digitOrderRoundForResolve]
+  );
+  const boardDims = useBoardDimensions(
+    currentWord.dragLetters?.length ?? currentWord.letters.length
+  );
+  const n = levels.length;
+
+  /** Тек ағымдағы сөздің әріп дыбыстары алдын ала дайындалады. */
   useEffect(() => {
     preloadSoundsForWord(currentWord);
-
-    let idShortCel: number | null = null;
-    if (currentWord.letters.length <= 2) {
-      const cel = winCelebrationForWord(currentWord.word);
-      idShortCel = scheduleIdleWork(() => {
-        prefetchCelebrationAssets(currentWord.word);
-        prefetchWinCelebrationMusic(cel?.musicFile);
-        if (currentWord.voiced) {
-          preloadWordPronunciations([currentWord.word]);
-        }
-      });
-    }
-
-    const nextWord = WORDS[(wordIdx + 1) % n];
-    const idNext = scheduleIdleWork(() => {
-      preloadSoundsForWord(nextWord);
-    });
-
-    return () => {
-      if (idShortCel != null) cancelIdleWork(idShortCel);
-      cancelIdleWork(idNext);
-    };
-  }, [currentWord, wordIdx, n]);
-
-  /**
-   * 1 буква қалды → ағымдағы сөздің:
-   *   • mp3 толық дыбыстауы (Алма.MP3 …) — voiced болса
-   *   • Lottie ассеттері (celebration JSON-дары)
-   *   • celebration музыкасы (apple.mp3 …)
-   * параллель префетчке жіберіледі. ~2.4с буфер (lead-in + reading wave + tail)
-   * + соңғы букваны қою уақыты — бұл уақытта файлдар жетіп үлгереді.
-   * Барлығы идемпотентті — қайта шақырылса трафик жоқ.
-   */
-  const handleAlmostWin = useCallback(() => {
-    if (currentWord.voiced) {
-      preloadWordPronunciations([currentWord.word]);
-    }
-    prefetchCelebrationAssets(currentWord.word);
-    prefetchWinCelebrationMusic(
-      winCelebrationForWord(currentWord.word)?.musicFile
-    );
   }, [currentWord]);
 
   /** Оптимизация: тұрақты колбэк сілтемелері — PuzzleBoard артық ререндерден сақталады. */
@@ -150,27 +115,73 @@ function GameSession({
   );
   /* onNext те сол функция — жеке inline () => емес, бір сілтеме. */
 
+  const [winScreenVisible, setWinScreenVisible] = useState(false);
+
+  useEffect(() => {
+    setWinScreenVisible(false);
+  }, [wordIdx]);
+
+  const onWinReady = useCallback(() => {
+    setWinScreenVisible(true);
+  }, []);
+
+  const winNextButtonLabel =
+    isDigitMultiRoundLevel && digitCountRoundsDone < DIGIT_MULTI_ROUND_TOTAL - 1
+      ? digitCountRoundsDone === 0
+        ? "Тағы 2 тапсырма →"
+        : "Тағы 1 тапсырма →"
+      : isDigitMultiRoundLevel &&
+          digitCountRoundsDone === DIGIT_MULTI_ROUND_TOTAL - 1
+        ? "Келесі деңгей →"
+        : undefined;
+
+  const onWinNext = useCallback(() => {
+    setWinScreenVisible(false);
+    if (
+      isDigitMultiRoundLevel &&
+      digitCountRoundsDone < DIGIT_MULTI_ROUND_TOTAL - 1
+    ) {
+      setDigitCountRoundsDone(r => r + 1);
+      setDigitCountReplayKey(k => k + 1);
+      return;
+    }
+    if (isDigitMultiRoundLevel) {
+      setDigitCountRoundsDone(0);
+    }
+    onNavigateNext();
+  }, [digitCountRoundsDone, isDigitMultiRoundLevel, onNavigateNext]);
+
   return (
-    <PuzzleBoard
-      key={wordIdx}
-      word={currentWord}
-      width={boardDims.width}
-      height={boardDims.height}
-      tileSize={boardDims.tileSize}
-      minHeightMode={boardDims.minHeightMode}
-      levelIndex={idx + 1}
-      totalLevels={n}
-      onNavigateHome={onHome}
-      onNavigatePrevWord={onNavigatePrev}
-      onNavigateNextWord={onNavigateNext}
-      onNext={onNavigateNext}
-      onAlmostWin={handleAlmostWin}
-    />
+    <>
+      <PuzzleBoard
+        key={`${sessionKey}-${wordIdx}-${digitCountReplayKey}`}
+        word={currentWord}
+        width={boardDims.width}
+        height={boardDims.height}
+        tileSize={boardDims.tileSize}
+        minHeightMode={boardDims.minHeightMode}
+        levelIndex={idx + 1}
+        totalLevels={n}
+        onNavigateHome={onHome}
+        onNavigatePrevWord={onNavigatePrev}
+        onNavigateNextWord={onNavigateNext}
+        onWinReady={onWinReady}
+      />
+      <WinScreen
+        visible={winScreenVisible}
+        word={currentWord.word}
+        displayLabel={currentWord.puzzleTitle ?? currentWord.word}
+        emoji={currentWord.emoji}
+        nextButtonLabel={winNextButtonLabel}
+        onNext={onWinNext}
+      />
+    </>
   );
 }
 
 export default function App() {
   const [entered, setEntered] = useState(false);
+  const [playSource, setPlaySource] = useState<PlaySource>("letters");
   const [wordIdx, setWordIdx] = useState(0);
   const [gameLandscapeShort, setGameLandscapeShort] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -178,6 +189,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isFs, setIsFs] = useState(false);
+  const [bgMusicOn, setBgMusicOn] = useState(readBackgroundMusicPreference);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
@@ -238,20 +250,37 @@ export default function App() {
   /** Оптимизация: GameSession / EntryMenu тұрақты onHome, onPickWord сілтемелері. */
   const handleHome = useCallback(() => setEntered(false), []);
 
-  const handlePickWord = useCallback((w: WordDef) => {
-    if (!currentUser) {
-      setShowAuthGate(true);
-      return;
-    }
-    const i = WORDS.findIndex(x => x === w);
-    setWordIdx(i >= 0 ? i : 0);
-    setEntered(true);
-  }, [currentUser]);
+  const toggleBackgroundMusic = useCallback(() => {
+    unlockAudio();
+    const next = !bgMusicOn;
+    setBgMusicOn(next);
+    setBackgroundMusicEnabled(next);
+  }, [bgMusicOn]);
+
+  const handlePickWord = useCallback(
+    (w: WordDef, source: PlaySource) => {
+      if (!currentUser) {
+        setShowAuthGate(true);
+        return;
+      }
+      setPlaySource(source);
+      const list = source === "letters" ? WORDS : DIGIT_LEVELS;
+      const i = list.findIndex(x => x === w);
+      setWordIdx(i >= 0 ? i : 0);
+      setEntered(true);
+    },
+    [currentUser]
+  );
+
+  const activeLevels = playSource === "letters" ? WORDS : DIGIT_LEVELS;
 
   /** Оптимизация: entered/wordIdx өзгермесе қайта есептелмейді. */
   const isAlmaSession = useMemo(
-    () => entered && WORDS[wordIdx % WORDS.length].word.trim().toUpperCase() === "АЛМА",
-    [entered, wordIdx]
+    () =>
+      entered &&
+      playSource === "letters" &&
+      WORDS[wordIdx % WORDS.length].word.trim().toUpperCase() === "АЛМА",
+    [entered, playSource, wordIdx]
   );
 
   /** Оптимизация: үлкен style объектісі әр рендерде жаңадан жасалмайды. */
@@ -284,10 +313,45 @@ export default function App() {
   // Кнопка "Войти" → полноэкранный логин
   if (showLogin) {
     return (
-      <LoginPage
-        onBack={() => setShowLogin(false)}
-        onSuccess={() => setShowLogin(false)}
-      />
+      <>
+        <LoginPage
+          onBack={() => setShowLogin(false)}
+          onSuccess={() => setShowLogin(false)}
+        />
+        <div
+          style={{
+            position: "fixed",
+            top: 14,
+            right: 16,
+            zIndex: 1000,
+          }}
+        >
+          <button
+            type="button"
+            onClick={toggleBackgroundMusic}
+            style={{
+              padding: "7px 12px",
+              fontSize: 18,
+              lineHeight: 1,
+              borderRadius: 10,
+              border: "none",
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(6px)",
+              color: "#555",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            }}
+            title={
+              bgMusicOn
+                ? "Фондық музыканы сөндіру"
+                : "Фондық музыканы қосу"
+            }
+            aria-pressed={bgMusicOn}
+          >
+            {bgMusicOn ? "🔊" : "🔇"}
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -306,10 +370,35 @@ export default function App() {
         <>
           <EntryMenu
             groups={WORD_MENU_GROUPS}
+            digitLevels={DIGIT_LEVELS}
             onPickWord={handlePickWord}
           />
 
           <div style={{ position: "fixed", top: 14, right: 16, display: "flex", gap: 8, zIndex: 999 }}>
+            <button
+              type="button"
+              onClick={toggleBackgroundMusic}
+              style={{
+                padding: "7px 12px",
+                fontSize: 18,
+                lineHeight: 1,
+                borderRadius: 10,
+                border: "none",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(6px)",
+                color: "#555",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              }}
+              title={
+                bgMusicOn
+                  ? "Фондық музыканы сөндіру"
+                  : "Фондық музыканы қосу"
+              }
+              aria-pressed={bgMusicOn}
+            >
+              {bgMusicOn ? "🔊" : "🔇"}
+            </button>
             {isFullscreenSupported() && (
               <button
                 onClick={() => toggleFullscreen()}
@@ -350,21 +439,58 @@ export default function App() {
           </div>
         </>
       ) : (
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <GameSession
-            wordIdx={wordIdx}
-            setWordIdx={setWordIdx}
-            onHome={handleHome}
-          />
-        </div>
+        <>
+          <div
+            style={{
+              position: "fixed",
+              top: 14,
+              right: 16,
+              zIndex: 999,
+            }}
+          >
+            <button
+              type="button"
+              onClick={toggleBackgroundMusic}
+              style={{
+                padding: "7px 12px",
+                fontSize: 18,
+                lineHeight: 1,
+                borderRadius: 10,
+                border: "none",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(6px)",
+                color: "#555",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              }}
+              title={
+                bgMusicOn
+                  ? "Фондық музыканы сөндіру"
+                  : "Фондық музыканы қосу"
+              }
+              aria-pressed={bgMusicOn}
+            >
+              {bgMusicOn ? "🔊" : "🔇"}
+            </button>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <GameSession
+              wordIdx={wordIdx}
+              setWordIdx={setWordIdx}
+              onHome={handleHome}
+              levels={activeLevels}
+              sessionKey={playSource}
+            />
+          </div>
+        </>
       )}
     </div>
   );

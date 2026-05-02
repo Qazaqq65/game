@@ -71,6 +71,9 @@
   .readingWaveActive {
     animation: none;
   }
+  .glyphDigit {
+    animation: none !important;
+  }
 }
 
 /*
@@ -130,4 +133,23 @@
     filter: drop-shadow(0 0 10px #e879f9) drop-shadow(0 0 22px #c084fc) drop-shadow(0 0 36px #7c3aed55);
     transform: scale(1.04);
   }
+}
+
+/** Цифрлар: тұрақсыз тұрғанда жеңіл «тиындық» — көз-аузсыз нұсқа. */
+@keyframes dragGlyphDigitIdle {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-3px) scale(1.028) rotate(-0.9deg);
+  }
+  65% {
+    transform: translateY(-1px) scale(1.012) rotate(0.6deg);
+  }
+}
+
+.glyphDigit {
+  transform-origin: 50% 82%;
+  will-change: transform;
+  animation: dragGlyphDigitIdle 2.75s ease-in-out infinite;
 }

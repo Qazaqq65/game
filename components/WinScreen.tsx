@@ -15,25 +15,30 @@ import {
 } from "../utils/sound";
 import {
   fetchLottieJson,
+  getCachedLottieJson,
   lottieUrlForFile,
 } from "../utils/celebrationAssets";
 
 interface WinScreenProps {
   word: string;
+  /** aria және көрсету үшін (цифрлық деңгей тақырыбы т.б.) */
+  displayLabel?: string;
   emoji: string;
   onNext: () => void;
+  /** Берілмесе — «Алға →» (мысалы, 2-цифрлық тапсырма қайта ойналғанда). */
+  nextButtonLabel?: string;
+  /** false — overlay жасырылған, бірақ компонент DOM-да қалуы мүмкін (Lottie қайта құралмасын). */
+  visible: boolean;
 }
 
 /** WinScreen.module.css: max(winScreenFadeIn 2.2s, celebrationFadeIn ~2.28s) */
 const WIN_ENTRANCE_MS = 3400;
-/** Жеңіс соңы: алмада — музыкадан кейін, сахнада — парадтан кейін */
+/** Жеңіс соңы: алмада — музыкадан кейін, child-та — видео біткен соң */
 const AFTER_WIN_PAUSE_MS = 1250;
-/** WinScreen.module.css .chaseParade — winChaseParade бір толық айналым */
-const SAVANNA_PARADE_LOOP_MS = 6200;
 const CHILD_VIDEO_PLAY_MS = 7000;
 const VIRUS_SEQUENCE_STEP_MS = 2200;
 const VIRUS_FINAL_HOLD_MS = 1900;
-const FLOWER_EXTRA_HOLD_MS = 2200;
+const FLOWER_EXTRA_HOLD_MS = 4200;
 const ROCKET_EXTRA_HOLD_MS = 2500;
 const DOG_SECOND_DELAY_MS = 2000;
 
@@ -73,23 +78,19 @@ function CelebrationLottieView({
 function WinCelebrationScene({
   scene,
   lionData,
-  lizardData,
   videoUrl,
   actorVariant,
   followUpData,
   virusFrameIndex,
   showDogPartner,
-  framedChase,
 }: {
   scene: WinCelebrationDef["scene"];
   lionData: object | null;
-  lizardData: object | null;
   videoUrl: string | null;
   actorVariant?: WinCelebrationDef["actorVariant"];
   followUpData: object[];
   virusFrameIndex: number;
   showDogPartner: boolean;
-  framedChase: boolean;
 }) {
   if (scene === "apple" && lionData) {
     if (actorVariant === "dogpair") {
@@ -164,134 +165,41 @@ function WinCelebrationScene({
     );
   }
 
-  if (!lionData) return null;
-
-  if (scene === "savanna" && framedChase) {
-    if (actorVariant === "dopStaticMoving" && lionData) {
-      return (
-        <div className={styles.celebrationBackdrop} aria-hidden>
-          <div className={styles.appleScene} />
-          <div className={styles.appleWarmWash} />
-          <div className={styles.appleGlow} />
-          <div className={styles.appleCenterStage}>
-            <div className={`${styles.appleMatte} ${styles.appleMatteFramedParade}`}>
-              <div className={styles.appleFrameChaseClip}>
-                <div className={styles.appleFrameChaseGround} aria-hidden />
-                <div className={styles.appleFrameBallStatic}>
-                  <CelebrationLottieView
-                    data={lionData}
-                    lottieClassName={styles.lottieBallStaticFramed}
-                  />
-                </div>
-                {lizardData ? (
-                  <div className={styles.chaseParadeFramed}>
-                    <CelebrationLottieView
-                      data={lizardData}
-                      lottieClassName={styles.lottieBallFramed}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const chaseInner = lizardData ? (
-      <div className={styles.chasePair}>
-        <CelebrationLottieView
-          data={lionData}
-          lottieClassName={`${styles.lottieLion} ${styles.lottieLionFramed}`}
-        />
-        <CelebrationLottieView
-          data={lizardData}
-          lottieClassName={`${styles.lottieLizard} ${styles.lottieLizardFramed}`}
-        />
-      </div>
-    ) : (
-      <CelebrationLottieView
-        data={lionData}
-        lottieClassName={`${styles.lottieLion} ${styles.lottieLionFramed}`}
-      />
-    );
-    return (
-      <div className={styles.celebrationBackdrop} aria-hidden>
-        <div className={styles.appleScene} />
-        <div className={styles.appleWarmWash} />
-        <div className={styles.appleGlow} />
-        <div className={styles.appleCenterStage}>
-          <div className={`${styles.appleMatte} ${styles.appleMatteFramedParade}`}>
-            <div className={styles.appleFrameChaseClip}>
-              <div className={styles.appleFrameChaseGround} aria-hidden />
-              <div className={styles.chaseParadeFramed}>{chaseInner}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.celebrationBackdrop} aria-hidden>
-      <div className={styles.savannaPhoto} />
-      <div className={styles.sceneSavanna} />
-      <div className={styles.groundTrack}>
-        <div className={styles.chaseParade}>
-          {lizardData ? (
-            <div className={styles.chasePair}>
-              <CelebrationLottieView
-                data={lionData}
-                lottieClassName={styles.lottieLion}
-              />
-              <CelebrationLottieView
-                data={lizardData}
-                lottieClassName={styles.lottieLizard}
-              />
-            </div>
-          ) : (
-            <CelebrationLottieView
-              data={lionData}
-              lottieClassName={styles.lottieLion}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function loadCelebrationAssets(
   def: WinCelebrationDef,
   signal: { cancelled: boolean }
-): Promise<{ lion: object | null; lizard: object | null; followUps: object[] }> {
+): Promise<{ lion: object | null; followUps: object[] }> {
   if (!def.lottieFile) {
-    return Promise.resolve({ lion: null, lizard: null, followUps: [] });
+    return Promise.resolve({ lion: null, followUps: [] });
   }
   const lionUrl = winCelebrationLottieUrl(def);
-  const lizardUrl = def.chaseLizardFile
-    ? lottieUrlForFile(def.chaseLizardFile)
-    : null;
   const followUpUrls = (def.followUpLottieFiles ?? []).map(lottieUrlForFile);
 
   return Promise.all([
     fetchLottieJson(lionUrl),
-    lizardUrl ? fetchLottieJson(lizardUrl) : Promise.resolve(null),
     ...followUpUrls.map(url => fetchLottieJson(url)),
-  ]).then(([lion, lizard, ...followUps]) => {
-    if (signal.cancelled) return { lion: null, lizard: null, followUps: [] };
+  ]).then(([lion, ...followUps]) => {
+    if (signal.cancelled) return { lion: null, followUps: [] };
     return {
       lion,
-      lizard,
       followUps: followUps.filter((item): item is object => item != null),
     };
   });
 }
 
-export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
+export function WinScreen({
+  word,
+  displayLabel,
+  emoji: _emoji,
+  onNext,
+  nextButtonLabel,
+  visible,
+}: WinScreenProps) {
   const celebration = winCelebrationForWord(word);
   const [lionData, setLionData] = useState<object | null>(null);
-  const [lizardData, setLizardData] = useState<object | null>(null);
   const [followUpData, setFollowUpData] = useState<object[]>([]);
   const [virusFrameIndex, setVirusFrameIndex] = useState(0);
   const [showDogPartner, setShowDogPartner] = useState(false);
@@ -302,39 +210,62 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
       : null;
 
   useEffect(() => {
+    setLionData(null);
+    setFollowUpData([]);
+    setVirusFrameIndex(0);
+    setShowDogPartner(false);
+  }, [word]);
+
+  useEffect(() => {
+    if (!visible) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
+  }, [visible]);
 
   useEffect(() => {
+    if (!visible) {
+      return;
+    }
     if (!celebration || isLowEnd) {
       setLionData(null);
-      setLizardData(null);
       setFollowUpData([]);
       return;
     }
     if (celebration.scene === "child") {
       setLionData(null);
-      setLizardData(null);
       setFollowUpData([]);
       return;
     }
+
+    const lionUrl = celebration.lottieFile
+      ? winCelebrationLottieUrl(celebration)
+      : null;
+    const followUpUrls = (celebration.followUpLottieFiles ?? []).map(lottieUrlForFile);
+    const cachedLion = lionUrl ? getCachedLottieJson(lionUrl) : null;
+    const cachedFollowUps = followUpUrls.map(getCachedLottieJson);
+    const hasAllCachedFollowUps = cachedFollowUps.every(Boolean);
+    if (cachedLion && hasAllCachedFollowUps) {
+      setLionData(cachedLion);
+      setFollowUpData(cachedFollowUps.filter((x): x is object => x != null));
+      return;
+    }
+
     const signal = { cancelled: false };
-    loadCelebrationAssets(celebration, signal).then(({ lion, lizard, followUps }) => {
+    loadCelebrationAssets(celebration, signal).then(({ lion, followUps }) => {
       if (signal.cancelled) return;
       setLionData(lion);
-      setLizardData(lizard);
       setFollowUpData(followUps);
     });
     return () => {
       signal.cancelled = true;
     };
-  }, [celebration, isLowEnd]);
+  }, [visible, celebration, isLowEnd]);
 
   const showParade =
+    visible &&
     celebration != null &&
     !isLowEnd &&
     (celebration.scene === "child" ? childVideoUrl != null : lionData != null);
@@ -412,25 +343,6 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
   }, [showParade, celebration, followUpData.length]);
 
   useEffect(() => {
-    if (!showParade || !celebration || celebration.scene !== "savanna") {
-      return;
-    }
-
-    const advanceDelta = celebration.winAutoAdvanceDeltaMs ?? 0;
-    let cancelled = false;
-    const t = window.setTimeout(() => {
-      if (!cancelled) {
-        onNextRef.current();
-      }
-    }, WIN_ENTRANCE_MS + SAVANNA_PARADE_LOOP_MS + AFTER_WIN_PAUSE_MS + advanceDelta);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [showParade, celebration]);
-
-  useEffect(() => {
     if (!showParade || !celebration || celebration.scene !== "child") {
       return;
     }
@@ -448,28 +360,31 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
     };
   }, [showParade, celebration]);
 
-  const rootClass = showParade
-    ? `${styles.root} ${styles.rootParade}`
-    : `${styles.root} ${styles.rootPlain}`;
+  const rootClass = [
+    styles.root,
+    !visible ? styles.rootHidden : "",
+    showParade ? styles.rootParade : styles.rootPlain,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return createPortal(
     <div
       className={rootClass}
       role="dialog"
-      aria-modal="true"
-      aria-label={`${word} жиналды`}
+      aria-modal={visible}
+      aria-hidden={!visible}
+      aria-label={`${displayLabel ?? word} жиналды`}
     >
       {showParade ? (
         <WinCelebrationScene
           scene={celebration.scene}
           lionData={lionData}
-          lizardData={lizardData}
           videoUrl={childVideoUrl}
           actorVariant={celebration.actorVariant}
           followUpData={followUpData}
           virusFrameIndex={virusFrameIndex}
           showDogPartner={showDogPartner}
-          framedChase={celebration.framedChase === true}
         />
       ) : null}
 
@@ -477,9 +392,13 @@ export function WinScreen({ word, emoji: _emoji, onNext }: WinScreenProps) {
         type="button"
         className={`${styles.nextButton} ${styles.nextButtonCorner}`}
         onClick={onNext}
-        aria-label="Алға, келесі сөз"
+        aria-label={
+          nextButtonLabel != null
+            ? nextButtonLabel.replace(/→/g, "").trim()
+            : "Алға, келесі сөз"
+        }
       >
-        Алға →
+        {nextButtonLabel ?? "Алға →"}
       </button>
     </div>,
     document.body

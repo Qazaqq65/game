@@ -41,6 +41,12 @@ export interface LetterDef {
 
 export interface WordDef {
   word: string;
+  /** Меню / жеңіс: адам оқитын тақырып (бос болса `word`) */
+  puzzleTitle?: string;
+  /** Меню карточкасының астына қысқа сипаттама */
+  menuSubtitle?: string;
+  /** Режим «Цифры»: деңгей нөмірі (1, 2, …) */
+  levelNumber?: number;
   emoji: string;
   /** Optional SVG path from /public (e.g. "/svg/rooster.svg") — shown instead of emoji in menu cards */
   svgSrc?: string;
@@ -50,6 +56,41 @@ export interface WordDef {
    * Файл атауы — сөздің бірінші әрпі бас, қалғаны — кіші (мысалы "Алма.MP3").
    */
   voiced?: boolean;
+  /**
+   * «Счёт заттар»: min..max аралығындағы сан әр ойында кездейсоқ,
+   * `objectHint` арқылы көрсетіледі; пазл — дұрыс цифраны drag-and-drop.
+   */
+  objectCountDrag?: { emoji: string; min: number; max: number };
+  /** Тек ойын экраны: неше зат көрсету керек (генерациядан кейін) */
+  objectHint?: { count: number; emoji: string };
+  /**
+   * Scatter плиткалары: ұзындығы `letters` (слоттар) ұзындығынан үлкен болуы мүмкін.
+   * idx плитка осы массивке сілтейді; слотқа сайкестікі `letters[слот]` арқылы тексеріледі.
+   */
+  dragLetters?: LetterDef[];
+  /**
+   * «Порядок бойынша»: 2–3 қатарлы бүтін сан (0…9), scatter-да аралас,
+   * орындарын өсу ретімен қою керек (слоттар солдан оңға).
+   */
+  digitOrderDrag?: true;
+  /**
+   * «Қосу»: ойын барысында `equationHint` — a + b = ? , бір слотқа жауап цифрасы.
+   */
+  digitAddDrag?: true;
+  /** «Азайту»: a − b = ? , `equationHint.op` — «subtract». */
+  digitSubtractDrag?: true;
+  /**
+   * Тек ойын: a ± b = ?; emoji — төменгі жолдағы бейне (мысалы 🍎).
+   * `op` берілмесе — қосу.
+   */
+  equationHint?: {
+    a: number;
+    b: number;
+    emoji?: string;
+    op?: "add" | "subtract";
+  };
+  /** true — GhostSlot контурында дұрыс әріп/цифр көрсетілмейді (сан санау). */
+  hideSlotGlyph?: boolean;
 }
 
 export interface TileState {

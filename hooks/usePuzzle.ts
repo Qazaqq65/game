@@ -1,6 +1,7 @@
 import React from "react";
 import {
   playLetterSnapSound,
+  playPuzzleWrongSound,
   playWordPronunciation,
   startSound,
   stopSound,
@@ -19,22 +20,30 @@ import type {
   WordDef,
   LetterDef,
 } from "../types";
-import type { ShellContentInsets, SlotArcOptions } from "../utils/canvas";
+import type {
+  ShellContentInsets,
+  SlotArcOptions,
+  SlotLayoutMode,
+} from "../utils/canvas";
 import {
   computeSlotPositions,
   computeScatterPositions,
   shuffleArray,
   clampTileTopLeft,
 } from "../utils/canvas";
+import {
+  layoutGapXForCount,
+  shouldUseTwoRowSlotLayout,
+} from "../hooks/useBoardDimensions";
 
-/** АРЫСТАН, ЗЫМЫРАН: буквалар жақын, дуга күштірек (бір стиль). */
-const COMPACT_ARC_WORDS = new Set(["АРЫСТАН", "ЗЫМЫРАН"]);
+/** ЗЫМЫРАН: буквалар жақын, дуга күштірек (бір стиль). */
+const COMPACT_ARC_WORDS = new Set(["ЗЫМЫРАН"]);
 
 // ── Жеңіс «оқу толқыны» (reading wave) таймині ─────────────────────
 // Сөз жиналған соң, дыбыс басталар алдында толқын кезек-кезек ағады:
 // әр буква WAVE_STEP_MS-тен кейін секіреді, өзі ~720мс анимацияланады
 // (DraggableTile.module.css → .readingWaveActive).
-const WAVE_STEP_MS = 230;
+const WAVE_STEP_MS = 180;
 const WAVE_LETTER_MS = 720;
 /** Соңғы буква секіріп болған соң WinScreen ашылғанға дейінгі қысқа кідіріс. */
 const WAVE_TAIL_MS = 280;
@@ -49,14 +58,35 @@ function readingWaveDurationMs(letterCount: number): number {
   return Math.max(0, letterCount - 1) * WAVE_STEP_MS + WAVE_LETTER_MS;
 }
 
-function slotLayoutForWord(word: string): {
+function slotLayoutForBoard(
+  word: string,
+  slotCount: number,
+  containerW: number,
+  containerH: number
+): {
   gapX: number;
   arcOpts: SlotArcOptions | undefined;
+  layoutMode: SlotLayoutMode;
 } {
-  if (COMPACT_ARC_WORDS.has(word.trim().toUpperCase())) {
-    return { gapX: 0, arcOpts: { arcLiftScale: 1.72 } };
+  const w = word.trim();
+  if (COMPACT_ARC_WORDS.has(w.toUpperCase())) {
+    return {
+      gapX: 0,
+      arcOpts: { arcLiftScale: 1.72 },
+      layoutMode: "single",
+    };
   }
-  return { gapX: 10, arcOpts: undefined };
+  const twoRow = shouldUseTwoRowSlotLayout(slotCount, containerW, containerH);
+  const maxInRow = twoRow ? Math.ceil(slotCount / 2) : Math.max(1, w.length);
+  return {
+    gapX: layoutGapXForCount(maxInRow),
+    arcOpts: undefined,
+    layoutMode: twoRow ? "twoRow" : "single",
+  };
+}
+
+function tileDefSource(word: WordDef): LetterDef[] {
+  return word.dragLetters ?? word.letters;
 }
 
 /** Дәл шетінде 0, ортасына жақындағанда үдемелі тарту — секірмелі «магнит» жоқ */
@@ -65,6 +95,8 @@ const MAGNET_ZONE_PX = 20;
 const SNAP_RELEASE_PX = 88;
 /** DraggableTile ішіндегі snapped transition ұзақтығымен синхрон (ms) */
 const SNAP_SETTLE_MS = 440;
+/** Дұрыс snap соңы: слот жиегі жасыл (мс). */
+const SLOT_ACCENT_OK_MS = 520;
 /** Тарту кезінде: саусақ букваны жаппас үшін touch-та ірірек */
 const DRAG_SCALE_MOUSE = 1.22;
 const DRAG_SCALE_TOUCH = 1.52;
@@ -257,7 +289,8 @@ function relayoutPreserveProgress(
   letterCount: number,
   contentInsets: ShellContentInsets | null,
   gapX: number,
-  arcOpts?: SlotArcOptions | null
+  arcOpts?: SlotArcOptions | null,
+  layoutMode: SlotLayoutMode = "single"
 ): { slots: SlotPosition[]; tiles: TileState[] } {
   const n = letterCount;
   const newSlots = computeSlotPositions(
@@ -267,7 +300,8 @@ function relayoutPreserveProgress(
     newTileSize,
     gapX,
     contentInsets,
-    arcOpts
+    arcOpts,
+    layoutMode
   );
   const scaleX = prevW > 0 ? newW / prevW : 1;
   const scaleY = prevH > 0 ? newH / prevH : 1;
@@ -327,6 +361,9 @@ function draggedTileComputedState(
   isNearTarget: boolean;
   snapSlotIndex: number | null;
   snapDistance: number;
+  /** Кез келген әріп үшін — жақын слот (қате жауапты тану үшін). */
+  nearestSlotIndex: number | null;
+  nearestSlotDistance: number;
 } {
   let magnetSlot: SlotPosition | null = null;
   let rawBestD = Infinity;
@@ -372,12 +409,26 @@ function draggedTileComputedState(
     }
   }
 
+  let nearestSlotIndex: number | null = null;
+  let nearestSlotDistance = Infinity;
+  for (let s = 0; s < slots.length; s++) {
+    const slot = slots[s];
+    if (!slot) continue;
+    const d = Math.hypot(slot.x - x, slot.y - y);
+    if (d < nearestSlotDistance) {
+      nearestSlotDistance = d;
+      nearestSlotIndex = s;
+    }
+  }
+
   return {
     x,
     y,
     isNearTarget: magnetSlot != null && rawBestD < 16,
     snapSlotIndex,
     snapDistance,
+    nearestSlotIndex,
+    nearestSlotDistance,
   };
 }
 
@@ -416,6 +467,8 @@ interface UsePuzzleReturn {
   /** Көршілес буквалар арасындағы стаггер (мс). */
   readingWaveStepMs: number;
   rootRef: React.RefObject<HTMLDivElement | null>;
+  /** Слот жиегі: дұрыс/қате тастағанда қысқа accent. */
+  slotFrameAccent: { slotIndex: number; tone: "wrong" | "ok" } | null;
   onTilePointerDown: (
     e: React.PointerEvent<HTMLDivElement>,
     tileIdx: number
@@ -440,7 +493,8 @@ export function usePuzzle({
   const dragMoveRafRef = useRef<number | null>(null);
   const dragPendingClientRef = useRef<{ x: number; y: number } | null>(null);
   const slotsRef = useRef<SlotPosition[]>([]);
-  const lettersRef = useRef<LetterDef[]>([]);
+  const tileSrcRef = useRef<LetterDef[]>([]);
+  const slotTargetRef = useRef<LetterDef[]>([]);
   const snapTileRef = useRef<
     (tileIdx: number, targetSlotS: number, currentSlots: SlotPosition[]) => void
   >(() => {});
@@ -450,6 +504,11 @@ export function usePuzzle({
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [won, setWon] = useState(false);
   const [readingWave, setReadingWave] = useState(false);
+  const [slotFrameAccent, setSlotFrameAccent] = useState<{
+    slotIndex: number;
+    tone: "wrong" | "ok";
+  } | null>(null);
+  const slotAccentClearRef = useRef<number | null>(null);
 
   const layoutDimsRef = useRef({ w: 0, h: 0, tile: 0 });
   const wordKeyRef = useRef<string | null>(null);
@@ -477,8 +536,8 @@ export function usePuzzle({
     );
     if (!dragEl) return;
 
-    // velocity deformation + time-based personality → combined
-    const letters = lettersRef.current;
+    // velocity deformation + time-based personality → combined WAVE_STEP_MS
+    const letters = tileSrcRef.current;
     const ch = letters[tile.idx]?.ch ?? "";
     const pers = computePersonality(ch, performance.now() / 1000);
     const finalSx = frame.sx * pers.sx;
@@ -530,6 +589,9 @@ export function usePuzzle({
       if (dragAnimTickRef.current != null) {
         cancelAnimationFrame(dragAnimTickRef.current);
       }
+      if (slotAccentClearRef.current != null) {
+        clearTimeout(slotAccentClearRef.current);
+      }
       // Сөз жиналып, оның дыбысы ойнап тұрғанда басқа сөзге/басты бетке
       // көшсе — артық дыбыс қалмасын.
       stopWordPronunciation();
@@ -540,28 +602,36 @@ export function usePuzzle({
   // ── INIT (толық қайта бастау: жаңа сөз немесе reset) ──────────────────
 
   const buildTilesFresh = useCallback(() => {
-    const n = word.letters.length;
+    const nSlots = word.letters.length;
+    const src = tileDefSource(word);
+    const nTiles = src.length;
     const insets = shellContentInsets;
 
-    const { gapX, arcOpts } = slotLayoutForWord(word.word);
+    const { gapX, arcOpts, layoutMode } = slotLayoutForBoard(
+      word.word,
+      nSlots,
+      containerW,
+      containerH
+    );
     const newSlots = computeSlotPositions(
-      n,
+      nSlots,
       containerW,
       containerH,
       tileSize,
       gapX,
       insets,
-      arcOpts
+      arcOpts,
+      layoutMode
     );
     const scattered = computeScatterPositions(
-      n,
+      nTiles,
       containerW,
       containerH,
       tileSize,
       insets
     );
 
-    const order = shuffleArray(Array.from({ length: n }, (_, i) => i));
+    const order = shuffleArray(Array.from({ length: nTiles }, (_, i) => i));
 
     const newTiles: TileState[] = order.map((letterIdx, posIdx) => ({
       idx: letterIdx,
@@ -584,6 +654,11 @@ export function usePuzzle({
 
     setWon(false);
     setReadingWave(false);
+    if (slotAccentClearRef.current != null) {
+      clearTimeout(slotAccentClearRef.current);
+      slotAccentClearRef.current = null;
+    }
+    setSlotFrameAccent(null);
     almostWinFiredRef.current = false;
     dragRef.current = null;
     setDragIdx(null);
@@ -593,7 +668,8 @@ export function usePuzzle({
   useLayoutEffect(() => {
     const prev = layoutDimsRef.current;
     const firstLayout = prev.w <= 0;
-    const wordKey = word.word;
+    const dragSig = word.dragLetters?.map(l => l.ch).join("") ?? "";
+    const wordKey = `${word.word}:${dragSig}`;
     const wordChanged = wordKeyRef.current !== wordKey;
 
     if (firstLayout || wordChanged) {
@@ -616,7 +692,8 @@ export function usePuzzle({
     }
 
     const prevTiles = tilesRef.current;
-    if (prevTiles.length !== word.letters.length) {
+    const tileCount = tileDefSource(word).length;
+    if (prevTiles.length !== tileCount) {
       buildTilesFresh();
       layoutDimsRef.current = {
         w: containerW,
@@ -626,7 +703,12 @@ export function usePuzzle({
       return;
     }
 
-    const { gapX: gx, arcOpts: ao } = slotLayoutForWord(word.word);
+    const { gapX: gx, arcOpts: ao, layoutMode: lm } = slotLayoutForBoard(
+      word.word,
+      word.letters.length,
+      containerW,
+      containerH
+    );
     const { slots: ns, tiles: nt } = relayoutPreserveProgress(
       prevTiles,
       prev.w,
@@ -638,7 +720,8 @@ export function usePuzzle({
       word.letters.length,
       shellContentInsets ?? null,
       gx,
-      ao
+      ao,
+      lm
     );
     setSlots(ns);
     setTiles(nt);
@@ -654,6 +737,7 @@ export function usePuzzle({
   }, [
     word.word,
     word.letters.length,
+    word.dragLetters,
     containerW,
     containerH,
     tileSize,
@@ -664,14 +748,16 @@ export function usePuzzle({
   const checkPuzzleWin = useCallback(
     (next: TileState[]) => {
       const n = word.letters.length;
-      if (!next.every(t => t.snapped)) return false;
-      const taken = next.map(t => t.atSlot).filter((s): s is number => s !== null);
-      if (taken.length !== n || new Set(taken).size !== n) return false;
-      return next.every(
-        t => t.atSlot !== null && word.letters[t.idx].ch === word.letters[t.atSlot].ch
+      const src = tileDefSource(word);
+      const snapped = next.filter(t => t.snapped && t.atSlot !== null);
+      if (snapped.length !== n) return false;
+      const taken = snapped.map(t => t.atSlot!);
+      if (new Set(taken).size !== n) return false;
+      return snapped.every(
+        t => src[t.idx].ch === word.letters[t.atSlot!].ch
       );
     },
-    [word.letters]
+    [word]
   );
 
   // ── SNAP ──────────────────────────────────────────────
@@ -682,7 +768,8 @@ export function usePuzzle({
         const tile = prev[tileIdx];
         if (!tile || tile.snapped) return prev;
 
-        const ch = word.letters[tile.idx].ch;
+        const src = tileDefSource(word);
+        const ch = src[tile.idx].ch;
         if (word.letters[targetSlotS].ch !== ch) return prev;
 
         const slotPos = currentSlots[targetSlotS];
@@ -774,6 +861,17 @@ export function usePuzzle({
 
         tilesRef.current = next;
 
+        queueMicrotask(() => {
+          if (slotAccentClearRef.current != null) {
+            clearTimeout(slotAccentClearRef.current);
+          }
+          setSlotFrameAccent({ slotIndex: targetSlotS, tone: "ok" });
+          slotAccentClearRef.current = window.setTimeout(() => {
+            setSlotFrameAccent(null);
+            slotAccentClearRef.current = null;
+          }, SLOT_ACCENT_OK_MS);
+        });
+
         playLetterSnapSound(ch);
 
         const totalLetters = word.letters.length;
@@ -809,6 +907,14 @@ export function usePuzzle({
           setTimeout(() => {
             setReadingWave(true);
 
+            // Егер söz-тің толық mp3 дыбысы жоқ болса (voiced !== true),
+            // pronunciation-ді қоспай, тек толқын аяқталуын күтеміз.
+            const shouldPlayWordSound = word.voiced === true;
+            if (!shouldPlayWordSound) {
+              setTimeout(advance, waveDur + WAVE_TAIL_MS);
+              return;
+            }
+
             const started = playWordPronunciation(word.word, () => {
               setTimeout(advance, PRONOUNCE_TAIL_MS);
             });
@@ -829,9 +935,10 @@ export function usePuzzle({
 
   useLayoutEffect(() => {
     slotsRef.current = slots;
-    lettersRef.current = word.letters;
+    tileSrcRef.current = tileDefSource(word);
+    slotTargetRef.current = word.letters;
     snapTileRef.current = snapTile;
-  }, [slots, word.letters, snapTile]);
+  }, [slots, word, snapTile]);
 
   const flushDragMove = useCallback(() => {
     dragMoveRafRef.current = null;
@@ -848,15 +955,14 @@ export function usePuzzle({
     const tile = tilesRef.current[ds.tileIdx];
     if (!tile) return;
 
-    const letters = lettersRef.current;
-    const ch = letters[tile.idx]?.ch;
+    const ch = tileSrcRef.current[tile.idx]?.ch;
     if (!ch) return;
 
     const comp = draggedTileComputedState(
       rawX,
       rawY,
       slotsRef.current,
-      letters,
+      slotTargetRef.current,
       ch,
       containerWRef.current,
       containerHRef.current,
@@ -970,13 +1076,12 @@ export function usePuzzle({
         return;
       }
 
-      const letters = lettersRef.current;
-      const ch = letters[tile.idx].ch;
+      const ch = tileSrcRef.current[tile.idx].ch;
       const comp = draggedTileComputedState(
         rawX,
         rawY,
         slotsRef.current,
-        letters,
+        slotTargetRef.current,
         ch,
         containerWRef.current,
         containerHRef.current,
@@ -990,10 +1095,45 @@ export function usePuzzle({
       dragVisualFrameRef.current = null;
 
       if (
-        comp.snapSlotIndex !== null &&
-        comp.snapDistance < SNAP_RELEASE_PX
+        comp.nearestSlotIndex !== null &&
+        comp.nearestSlotDistance < SNAP_RELEASE_PX
       ) {
-        snapTileRef.current(savedIdx, comp.snapSlotIndex, slotsRef.current);
+        const slotS = comp.nearestSlotIndex;
+        const expected = slotTargetRef.current[slotS]?.ch;
+        if (expected !== ch) {
+          if (slotAccentClearRef.current != null) {
+            clearTimeout(slotAccentClearRef.current);
+          }
+          setSlotFrameAccent({ slotIndex: slotS, tone: "wrong" });
+          slotAccentClearRef.current = window.setTimeout(() => {
+            setSlotFrameAccent(null);
+            slotAccentClearRef.current = null;
+          }, 650);
+          playPuzzleWrongSound();
+          setTiles(prev => {
+            const next: TileState[] = prev.map((t, i) =>
+              i === savedIdx
+                ? {
+                    ...t,
+                    x: comp.x,
+                    y: comp.y,
+                    scale: 1,
+                    ox: comp.x,
+                    oy: comp.y,
+                    or: t.rot,
+                    snapped: false,
+                    atSlot: null,
+                    isNearTarget: false,
+                    phase: "idle",
+                  }
+                : t
+            );
+            tilesRef.current = next;
+            return next;
+          });
+          return;
+        }
+        snapTileRef.current(savedIdx, slotS, slotsRef.current);
         return;
       }
 
@@ -1032,8 +1172,8 @@ export function usePuzzle({
       const el = e.currentTarget;
       el.setPointerCapture(e.pointerId);
 
-      const letters = lettersRef.current;
-      startSound(letters[tile.idx].ch);
+      const src = tileSrcRef.current;
+      startSound(src[tile.idx].ch);
 
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) {
@@ -1059,13 +1199,13 @@ export function usePuzzle({
 
       const rawX = clientX - rect.left - offsetX;
       const rawY = clientY - rect.top - offsetY;
-      const ch = letters[tile.idx].ch;
+      const ch = src[tile.idx].ch;
       const dragScale = dragScaleForPointer(e.pointerType);
       const comp = draggedTileComputedState(
         rawX,
         rawY,
         slotsRef.current,
-        letters,
+        slotTargetRef.current,
         ch,
         containerWRef.current,
         containerHRef.current,
@@ -1122,6 +1262,7 @@ export function usePuzzle({
     readingWave,
     readingWaveStepMs: WAVE_STEP_MS,
     rootRef,
+    slotFrameAccent,
     onTilePointerDown,
     onTilePointerMove,
     onTilePointerEnd: finishDragFromPointer,

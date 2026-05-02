@@ -149,6 +149,9 @@ export type SlotArcOptions = {
   arcLiftScale?: number;
 };
 
+/** Ұялы портрет: ұзын жол екі қатарға бөлінеді (мысалы 10 сан). */
+export type SlotLayoutMode = "single" | "twoRow";
+
 export function computeSlotPositions(
   count: number,
   containerW: number,
@@ -156,11 +159,29 @@ export function computeSlotPositions(
   tileSize: number,
   gapX = 10,
   contentInsets?: ShellContentInsets | null,
-  arcOpts?: SlotArcOptions | null
+  arcOpts?: SlotArcOptions | null,
+  layoutMode: SlotLayoutMode = "single"
 ): SlotPosition[] {
   const it = contentInsets?.top ?? 0;
   const ib = contentInsets?.bottom ?? 0;
   const innerH = Math.max(containerH - it - ib, tileSize + 40);
+
+  if (layoutMode === "twoRow" && count >= 2) {
+    const n1 = Math.ceil(count / 2);
+    const n2 = count - n1;
+    const rowGapY = Math.max(10, Math.round(gapX * 1.1));
+    const rowY = (nInRow: number, y: number) => {
+      const totalW = nInRow * tileSize + (nInRow - 1) * gapX;
+      const startX = (containerW - totalW) / 2;
+      return Array.from({ length: nInRow }, (_, j) => ({
+        x: startX + j * (tileSize + gapX),
+        y,
+      }));
+    };
+    const blockH = 2 * tileSize + rowGapY;
+    const topY = it + innerH / 2 - blockH / 2;
+    return [...rowY(n1, topY), ...rowY(n2, topY + tileSize + rowGapY)];
+  }
 
   const totalW = count * tileSize + (count - 1) * gapX;
   const startX = (containerW - totalW) / 2;

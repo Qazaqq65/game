@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PuzzleBoard } from "../components/PuzzleBoard";
+import { WinScreen } from "../components/WinScreen";
 import { WORDS } from "../data/words";
 import type { WordDef } from "../types";
 
@@ -22,19 +23,45 @@ export default function LetterPuzzle({
   onWordComplete,
 }: LetterPuzzleProps) {
   const [wordIdx, setWordIdx] = useState(0);
+  const [winScreenVisible, setWinScreenVisible] = useState(false);
   const currentWord = words[wordIdx % words.length];
 
+  useEffect(() => {
+    setWinScreenVisible(false);
+  }, [wordIdx]);
+
+  const onWinReady = useCallback(() => {
+    setWinScreenVisible(true);
+  }, []);
+
+  const goNextWord = useCallback(() => {
+    setWordIdx(i => i + 1);
+  }, []);
+
+  const onWinNext = useCallback(() => {
+    setWinScreenVisible(false);
+    goNextWord();
+  }, [goNextWord]);
+
   return (
-    <PuzzleBoard
-      key={wordIdx}              // remounts board when word changes
-      word={currentWord}
-      tileSize={tileSize}
-      width={width}
-      height={height}
-      bgColor={bgColor}
-      onComplete={onWordComplete}
-      onNext={() => setWordIdx(i => i + 1)}
-    />
+    <>
+      <PuzzleBoard
+        key={wordIdx}              // remounts board when word changes
+        word={currentWord}
+        tileSize={tileSize}
+        width={width}
+        height={height}
+        bgColor={bgColor}
+        onComplete={onWordComplete}
+        onWinReady={onWinReady}
+      />
+      <WinScreen
+        visible={winScreenVisible}
+        word={currentWord.word}
+        emoji={currentWord.emoji}
+        onNext={onWinNext}
+      />
+    </>
   );
 }
 

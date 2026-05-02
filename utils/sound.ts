@@ -6,6 +6,7 @@ export function unlockAudio() {
   if (Howler.ctx && Howler.ctx.state !== "running") {
     Howler.ctx.resume();
   }
+  tryStartBackgroundMusic();
 }
 
 const sounds: Record<string, Howl> = {};
@@ -18,9 +19,9 @@ let activeSound: Howl | null = null;
 function ensureLetterHowl(name: string): Howl {
   let h = sounds[name];
   if (h) return h;
-  const src = `/sounds/${encodeURIComponent(name)}.mp3`;
+  const encoded = encodeURIComponent(name);
   h = new Howl({
-    src: [src],
+    src: [`/sounds/LetterDrag/${encoded}.mp3`],
     volume: 1,
     preload: true,
     html5: false,
@@ -28,7 +29,7 @@ function ensureLetterHowl(name: string): Howl {
     onloaderror: () => {
       if (import.meta.env.DEV) {
         console.warn(
-          `[sound] не загрузился: ${src} — положи файл в public/sounds с тем же символом, что в words.ts (латиница ≠ кириллица, Е ≠ е).`
+          `[sound] не загрузился drag-дыбыс: /sounds/LetterDrag/${name}.mp3 — (немесе legacy: /sounds/${name}.mp3). Файл атауын words.ts-тағы әріппен дәл сәйкестендір (латиница ≠ кириллица, Е ≠ е).`
         );
       }
     },
@@ -51,6 +52,9 @@ export function preloadSounds(names: string[]) {
 export function preloadSoundsForWord(word: WordDef): void {
   const chars = new Set<string>();
   for (const L of word.letters) chars.add(L.ch);
+  if (word.dragLetters) {
+    for (const L of word.dragLetters) chars.add(L.ch);
+  }
   const arr = [...chars];
   preloadSounds(arr);
   preloadLetterSnapSounds(arr);
@@ -91,8 +95,8 @@ function ensureLetterSnapHowl(ch: string): Howl {
   const encoded = encodeURIComponent(fname);
 
   h = new Howl({
-    // Көпшілігі .MP3; б1 сияқты кіші .mp3 ғана — екіншісі 404, біріншісі жүктеледі
-    src: [`/sounds/${encoded}.MP3`, `/sounds/${encoded}.mp3`],
+    // Жаңа құрылым: /sounds/a1/*.mp3
+    src: [`/sounds/a1/${encoded}.mp3`],
     format: ["mp3"],
     volume: 1,
     preload: true,
@@ -101,7 +105,7 @@ function ensureLetterSnapHowl(ch: string): Howl {
     onloaderror: () => {
       if (import.meta.env.DEV) {
         console.warn(
-          `[sound] жоқ снап-дыбысы: /sounds/${fname}.MP3 — public/sounds/ (қажет болса) қой.`
+          `[sound] жоқ снап-дыбысы: /sounds/a1/${fname}.mp3`
         );
       }
     },
@@ -127,6 +131,34 @@ export function playLetterSnapSound(ch: string): boolean {
   return true;
 }
 
+/** Қате санау/слот — `public/sounds/puzzle-wrong.mp3` қосқанда ойнады. */
+let puzzleWrongHowl: Howl | null = null;
+
+function ensurePuzzleWrongHowl(): Howl {
+  if (puzzleWrongHowl) return puzzleWrongHowl;
+  puzzleWrongHowl = new Howl({
+    src: ["/sounds/puzzle-wrong.mp3"],
+    format: ["mp3"],
+    volume: 0.95,
+    preload: true,
+    html5: false,
+    loop: false,
+    onloaderror: () => {
+      if (import.meta.env.DEV) {
+        console.warn(
+          "[sound] жоқ қате жауап дыбысы: public/sounds/puzzle-wrong.mp3"
+        );
+      }
+    },
+  });
+  return puzzleWrongHowl;
+}
+
+export function playPuzzleWrongSound(): void {
+  unlockAudio();
+  ensurePuzzleWrongHowl().play();
+}
+
 // ── Сөздің толық дыбысталуы (Алма.MP3 т.б.) ───────────────────────
 
 const wordPronunciationHowls = new Map<string, Howl>();
@@ -138,28 +170,38 @@ function wordPronunciationFileName(word: string): string {
   return w.charAt(0) + w.slice(1).toLowerCase();
 }
 
+function ensureWordPronunciationHowl(word: string): Howl | null {
+  const key = word.trim().toUpperCase();
+  if (!key) return null;
+
+  const existing = wordPronunciationHowls.get(key);
+  if (existing) return existing;
+
+  const fname = wordPronunciationFileName(word);
+  if (!fname) return null;
+  const encoded = encodeURIComponent(fname);
+  const h = new Howl({
+    src: [`/sounds/${encoded}.mp3`],
+    format: ["mp3"],
+    volume: 1,
+    preload: true,
+    html5: false,
+    loop: false,
+    onloaderror: () => {
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[sound] жоқ сөз дыбысы: /sounds/${fname}.mp3 — файлды public/sounds/ ішіне қой.`
+        );
+      }
+    },
+  });
+  wordPronunciationHowls.set(key, h);
+  return h;
+}
+
 export function preloadWordPronunciations(words: string[]): void {
   words.forEach(word => {
-    const key = word.trim().toUpperCase();
-    if (!key || wordPronunciationHowls.has(key)) return;
-    const fname = wordPronunciationFileName(word);
-    const encoded = encodeURIComponent(fname);
-    const h = new Howl({
-      src: [`/sounds/${encoded}.MP3`, `/sounds/${encoded}.mp3`],
-      format: ["mp3"],
-      volume: 1,
-      preload: true,
-      html5: false,
-      loop: false,
-      onloaderror: () => {
-        if (import.meta.env.DEV) {
-          console.warn(
-            `[sound] жоқ сөз дыбысы: /sounds/${fname}.MP3 — файлды public/sounds/ ішіне қой.`
-          );
-        }
-      },
-    });
-    wordPronunciationHowls.set(key, h);
+    ensureWordPronunciationHowl(word);
   });
 }
 
@@ -167,26 +209,41 @@ export function playWordPronunciation(
   word: string,
   onEnded?: () => void
 ): boolean {
-  const key = word.trim().toUpperCase();
-  const h = wordPronunciationHowls.get(key);
+  const h = ensureWordPronunciationHowl(word);
   if (!h) return false;
-  if (h.state() !== "loaded") return false;
 
   stopSound();
   stopWordPronunciation();
 
   activeWordPronunciation = h;
   h.off("end");
-  if (onEnded) {
-    h.once("end", onEnded);
+  h.off("load");
+
+  const playWhenReady = () => {
+    if (activeWordPronunciation !== h) return;
+    h.off("end");
+    h.once("end", () => {
+      if (activeWordPronunciation === h) {
+        activeWordPronunciation = null;
+      }
+      onEnded?.();
+    });
+    h.play();
+  };
+
+  if (h.state() === "loaded") {
+    playWhenReady();
+  } else {
+    h.once("load", playWhenReady);
   }
-  h.play();
+
   return true;
 }
 
 export function stopWordPronunciation(): void {
   if (activeWordPronunciation) {
     activeWordPronunciation.off("end");
+    activeWordPronunciation.off("load");
     activeWordPronunciation.stop();
     activeWordPronunciation = null;
   }
@@ -196,6 +253,14 @@ export function stopWordPronunciation(): void {
 
 const winCelebrationHowls = new Map<string, Howl>();
 let activeWinCelebrationHowl: Howl | null = null;
+
+function stopWinCelebrationMusicOnly() {
+  if (activeWinCelebrationHowl) {
+    activeWinCelebrationHowl.off("end");
+    activeWinCelebrationHowl.stop();
+    activeWinCelebrationHowl = null;
+  }
+}
 
 function getWinCelebrationHowl(filename: string): Howl {
   let h = winCelebrationHowls.get(filename);
@@ -234,8 +299,12 @@ export function startWinCelebrationMusic(
   unlockAudio();
   stopSound();
   stopWordPronunciation();
-  stopWinCelebrationMusic();
-  if (!filename) return;
+  stopWinCelebrationMusicOnly();
+  if (!filename) {
+    resumeBackgroundMusicAfterWinIfNeeded();
+    return;
+  }
+  pauseBackgroundMusicForWin();
   const h = getWinCelebrationHowl(filename);
   h.off("end");
   h.stop();
@@ -247,11 +316,8 @@ export function startWinCelebrationMusic(
 }
 
 export function stopWinCelebrationMusic() {
-  if (activeWinCelebrationHowl) {
-    activeWinCelebrationHowl.off("end");
-    activeWinCelebrationHowl.stop();
-    activeWinCelebrationHowl = null;
-  }
+  stopWinCelebrationMusicOnly();
+  resumeBackgroundMusicAfterWinIfNeeded();
 }
 
 export function startAppleWinMusic(onEnded?: () => void) {
@@ -260,4 +326,96 @@ export function startAppleWinMusic(onEnded?: () => void) {
 
 export function stopAppleWinMusic() {
   stopWinCelebrationMusic();
+}
+
+// ── Фоновая музыка (public/music/fon/music.mp3) ───────────────────
+
+export const BACKGROUND_MUSIC_STORAGE_KEY = "kzv3-bg-music";
+
+function readBgMusicDesiredFromStorage(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(BACKGROUND_MUSIC_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+let backgroundMusicDesired = readBgMusicDesiredFromStorage();
+let backgroundMusicHowl: Howl | null = null;
+let backgroundMusicPausedForWin = false;
+
+function getBackgroundMusicHowl(): Howl {
+  if (!backgroundMusicHowl) {
+    backgroundMusicHowl = new Howl({
+      src: ["/music/fon/music.mp3"],
+      volume: 0.32,
+      preload: true,
+      html5: false,
+      loop: true,
+      onloaderror: () => {
+        if (import.meta.env.DEV) {
+          console.warn(
+            "[sound] фон: /music/fon/music.mp3 — қой public/music/fon/music.mp3"
+          );
+        }
+      },
+    });
+  }
+  return backgroundMusicHowl;
+}
+
+function tryStartBackgroundMusic() {
+  if (!backgroundMusicDesired) {
+    if (backgroundMusicHowl?.playing()) {
+      backgroundMusicHowl.stop();
+    }
+    return;
+  }
+  const h = getBackgroundMusicHowl();
+  if (h.playing()) return;
+  const go = () => {
+    if (!backgroundMusicDesired || backgroundMusicPausedForWin) return;
+    h.play();
+  };
+  if (h.state() === "loaded") {
+    go();
+  } else {
+    h.once("load", go);
+  }
+}
+
+function pauseBackgroundMusicForWin() {
+  const bg = backgroundMusicHowl;
+  if (!bg) return;
+  if (bg.playing()) {
+    bg.pause();
+    backgroundMusicPausedForWin = true;
+  }
+}
+
+function resumeBackgroundMusicAfterWinIfNeeded() {
+  if (!backgroundMusicPausedForWin) return;
+  backgroundMusicPausedForWin = false;
+  if (!backgroundMusicDesired) return;
+  const h = getBackgroundMusicHowl();
+  if (!h.playing()) {
+    h.play();
+  }
+}
+
+export function setBackgroundMusicEnabled(on: boolean): void {
+  backgroundMusicDesired = on;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(BACKGROUND_MUSIC_STORAGE_KEY, on ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }
+  tryStartBackgroundMusic();
+}
+
+export function readBackgroundMusicPreference(): boolean {
+  return readBgMusicDesiredFromStorage();
 }

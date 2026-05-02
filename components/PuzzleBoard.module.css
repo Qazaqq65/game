@@ -42,6 +42,108 @@
   touch-action: none;
 }
 
+.objectHintRow {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Төменірек: топ бар астында, бірақ саусақпен нысан санауға ыңғайлы */
+  top: max(92px, calc(env(safe-area-inset-top, 0px) + 80px));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(6px, 1.8vw, 12px);
+  max-width: min(96%, 460px);
+  padding: 0 max(8px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.objectHintItem {
+  font-size: clamp(1.65rem, 7.5vw, 2.45rem);
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.equationHintRow {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  top: max(92px, calc(env(safe-area-inset-top, 0px) + 80px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: clamp(6px, 2vw, 14px);
+  max-width: min(98%, 480px);
+  padding: 0 max(8px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+  font-family: var(--font-display-kz);
+}
+
+.equationNum {
+  font-size: clamp(1.55rem, 6.8vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(55, 48, 42, 0.92);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.08));
+}
+
+.equationOp {
+  font-size: clamp(1.35rem, 5.5vw, 2rem);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(120, 95, 75, 0.88);
+  padding: 0 2px;
+}
+
+.equationQ {
+  font-size: clamp(1.55rem, 6.8vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(120, 95, 75, 0.82);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* Цифрлық қатардың астында: a және b эмоджи тобы, +, =, ? */
+.equationApplesRow {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + 56px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 1.8vw, 11px);
+  max-width: min(98%, 490px);
+  padding: 0 max(8px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+  font-family: var(--font-display-kz);
+}
+
+.equationAppleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(2px, 0.8vw, 6px);
+  max-width: min(46vw, 220px);
+  padding: 4px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--game-anchor-highlight) 35%, transparent);
+}
+
+.equationApple {
+  font-size: clamp(1.15rem, 4.2vw, 1.75rem);
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.09));
+}
+
 .topBar {
   position: absolute;
   z-index: 220;

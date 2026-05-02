@@ -3,6 +3,7 @@ import { FONT_DISPLAY_KZ } from "../constants/fonts";
 import type { LetterDef } from "../types";
 import { letterPresetKey } from "../utils/letterPresetKey";
 import { Pattern } from "./MonsterLetterPatterns";
+import styles from "./DraggableTile.module.css";
 
 /** Оптимизация: Set модуль деңгейінде — әр рендерде жаңа Set құру жоқ. */
 const SOLID_FILL_LETTERS = new Set(["А", "Е", "Н", "С", "Т"]);
@@ -24,9 +25,12 @@ const SVG_BASE: CSSProperties = {
 export function LetterDragGlyph({
   letter,
   size,
+  isSnapped = false,
 }: {
   letter: LetterDef;
   size: number;
+  /** Слотқа қойылған соң — қосалқы қимылсыз тұруы керек (мысалы цифрлар). */
+  isSnapped?: boolean;
 }) {
   const { ch, color, pat, pc } = letter;
   const uid = useId().replace(/:/g, "");
@@ -44,6 +48,9 @@ export function LetterDragGlyph({
   const isM = ch === "М" || ch === "м";
   const isU_bar = letterPresetKey(ch) === "Ұ";
   const noPattern = SOLID_FILL_LETTERS.has(letterPresetKey(ch)) || isM;
+  const isDigit = /^[0-9]$/.test(ch);
+  const digitIdleClass =
+    isDigit && !isSnapped ? styles.glyphDigit : undefined;
 
   let svgStyle: CSSProperties = SVG_BASE;
   if (isT) {
@@ -107,6 +114,7 @@ export function LetterDragGlyph({
       overflow="visible"
       xmlns="http://www.w3.org/2000/svg"
       style={svgStyle}
+      className={digitIdleClass}
     >
       {isL ? (
         <>

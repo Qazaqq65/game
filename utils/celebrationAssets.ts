@@ -29,7 +29,7 @@ export function fetchLottieJson(url: string): Promise<object | null> {
   const inflight = inflightFetches.get(url);
   if (inflight) return inflight;
 
-  const p = fetch(url)
+  const p = fetch(url, { cache: "force-cache" })
     .then(r => {
       if (!r.ok) throw new Error(String(r.status));
       return r.json();
@@ -51,10 +51,14 @@ export function fetchLottieJson(url: string): Promise<object | null> {
   return p;
 }
 
+/** Синхронды оқу: кэште бар болса JSON-ды бірден қайтарады. */
+export function getCachedLottieJson(url: string): object | null {
+  return lottieJsonCache.get(url) ?? null;
+}
+
 function celebrationLottieUrls(def: WinCelebrationDef): string[] {
   const urls: string[] = [];
   if (def.lottieFile) urls.push(winCelebrationLottieUrl(def));
-  if (def.chaseLizardFile) urls.push(lottieUrlForFile(def.chaseLizardFile));
   for (const f of def.followUpLottieFiles ?? []) {
     urls.push(lottieUrlForFile(f));
   }

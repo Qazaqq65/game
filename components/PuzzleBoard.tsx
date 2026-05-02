@@ -1,5 +1,5 @@
 import { MotionConfig } from "framer-motion";
-import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
   fitTileSizeToBoard,
   type BoardMinHeightMode,
@@ -8,7 +8,6 @@ import { usePuzzle } from "../hooks/usePuzzle";
 import { useDeviceTier } from "../hooks/useDeviceTier";
 import { GhostSlot } from "./GhostSlot";
 import { DraggableTile } from "../components/DraggableTile";
-import { WinScreen } from "../components/WinScreen";
 import type { WordDef } from "../types";
 import {
   SHELL_UI_INSET_BOTTOM,
@@ -32,7 +31,6 @@ interface PuzzleBoardProps {
   minHeightMode?: BoardMinHeightMode;
   bgColor?: string;
   onComplete?: (word: string) => void;
-  onNext: () => void;
   /** Ойын кезінде: басты бет, артқа/алға сөз */
   onNavigateHome?: () => void;
   onNavigatePrevWord?: () => void;
@@ -41,6 +39,8 @@ interface PuzzleBoardProps {
   totalLevels?: number;
   /** Сөзді жинау 1 буқваға қалғанда — бір рет шақырылады. */
   onAlmostWin?: () => void;
+  /** Жеңіс экраны қажет кезде (won=true) — WinScreen сыртта тұрса. */
+  onWinReady?: () => void;
 }
 
 export function PuzzleBoard({
@@ -51,13 +51,13 @@ export function PuzzleBoard({
   minHeightMode = "normal",
   bgColor = "var(--game-anchor)",
   onComplete,
-  onNext,
   onNavigateHome,
   onNavigatePrevWord,
   onNavigateNextWord,
   levelIndex,
   totalLevels,
   onAlmostWin,
+  onWinReady,
 }: PuzzleBoardProps) {
   const [measured, setMeasured] = useState<{ w: number; h: number } | null>(
     null
@@ -121,15 +121,17 @@ export function PuzzleBoard({
       ? "var(--game-alma-board)"
       : bgColor;
 
+  const tileLayoutCount = word.dragLetters?.length ?? word.letters.length;
+
   const layoutTileSize = useMemo(() => {
     if (!measured) return tileSize;
     return fitTileSizeToBoard(
-      word.letters.length,
+      tileLayoutCount,
       effW,
       effH,
       minHeightMode
     );
-  }, [measured, effW, effH, word.letters.length, minHeightMode, tileSize]);
+  }, [measured, effW, effH, tileLayoutCount, minHeightMode, tileSize]);
 
   const {
     tiles,
@@ -139,6 +141,7 @@ export function PuzzleBoard({
     readingWave,
     readingWaveStepMs,
     rootRef,
+    slotFrameAccent,
     onTilePointerDown,
     onTilePointerMove,
     onTilePointerEnd,
@@ -151,6 +154,12 @@ export function PuzzleBoard({
     onComplete,
     onAlmostWin,
   });
+
+  useEffect(() => {
+    if (won) {
+      onWinReady?.();
+    }
+  }, [won, onWinReady]);
 
   useLayoutEffect(() => {
     const el = rootRef.current;
@@ -179,6 +188,12 @@ export function PuzzleBoard({
           size={layoutTileSize}
           x={pos.x}
           y={pos.y}
+          showGlyph={!word.hideSlotGlyph}
+          frameTone={
+            slotFrameAccent?.slotIndex === i
+              ? slotFrameAccent.tone
+              : "neutral"
+          }
         />
       ))}
 
@@ -189,7 +204,7 @@ export function PuzzleBoard({
           tile={tile}
           displayX={tile.x}
           displayY={tile.y}
-          letter={word.letters[tile.idx]}
+          letter={(word.dragLetters ?? word.letters)[tile.idx]}
           size={layoutTileSize}
           isDragging={dragIdx === i}
           isLowEnd={isLowEnd}
@@ -220,19 +235,16 @@ export function PuzzleBoard({
     </MotionConfig>
   );
 
-  const winOverlay =
-    won ? (
-      <WinScreen word={word.word} emoji={word.emoji} onNext={onNext} />
-    ) : null;
-
   if (!showGameBar) {
     return (
       <>
         {embeddedBoard}
-        {winOverlay}
       </>
     );
   }
+
+  const objectHint = word.objectHint;
+  const equationHint = word.equationHint;
 
   return (
     <>
@@ -243,6 +255,68 @@ export function PuzzleBoard({
           style={{ background: boardSurfaceBg }}
           aria-hidden
         />
+        {equationHint ? (
+          <>
+            <div
+              className={styles.equationHintRow}
+              role="img"
+              aria-label={
+                equationHint.op === "subtract"
+                  ? `${equationHint.a} азайту ${equationHint.b}`
+                  : `${equationHint.a} қосу ${equationHint.b}`
+              }
+            >
+              <span className={styles.equationNum}>{equationHint.a}</span>
+              <span className={styles.equationOp} aria-hidden>
+                {equationHint.op === "subtract" ? "−" : "+"}
+              </span>
+              <span className={styles.equationNum}>{equationHint.b}</span>
+              <span className={styles.equationOp} aria-hidden>
+                =
+              </span>
+              <span className={styles.equationQ} aria-hidden>
+                ?
+              </span>
+            </div>
+            <div
+              className={styles.equationApplesRow}
+              role="presentation"
+              aria-hidden
+            >
+              <div className={styles.equationAppleGroup}>
+                {Array.from({ length: equationHint.a }, (_, i) => (
+                  <span key={`eq-a-${i}`} className={styles.equationApple}>
+                    {equationHint.emoji ?? "🍎"}
+                  </span>
+                ))}
+              </div>
+              <span className={styles.equationOp}>
+                {equationHint.op === "subtract" ? "−" : "+"}
+              </span>
+              <div className={styles.equationAppleGroup}>
+                {Array.from({ length: equationHint.b }, (_, i) => (
+                  <span key={`eq-b-${i}`} className={styles.equationApple}>
+                    {equationHint.emoji ?? "🍎"}
+                  </span>
+                ))}
+              </div>
+              <span className={styles.equationOp}>=</span>
+              <span className={styles.equationQ}>?</span>
+            </div>
+          </>
+        ) : objectHint ? (
+          <div
+            className={styles.objectHintRow}
+            role="img"
+            aria-label={`${objectHint.count} зат`}
+          >
+            {Array.from({ length: objectHint.count }, (_, i) => (
+              <span key={i} className={styles.objectHintItem}>
+                {objectHint.emoji}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className={styles.tileLayer}>{tilesContent}</div>
       </MotionConfig>
 
@@ -298,7 +372,6 @@ export function PuzzleBoard({
         </button>
       </div>
     </div>
-    {winOverlay}
     </>
   );
 }

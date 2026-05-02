@@ -42,17 +42,14 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
         ],
       },
       {
-        word: "АРЫСТАН",
-        emoji: "🦁",
+        word: "АРА",
+        emoji: "🦜",
+        svgSrc: "/svg/bee.svg",
         voiced: true,
         letters: [
-          L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
-          L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
-          L("Ы", "#FF7A00", "lines", "#B35700", "on", { eyeY: 0.45, mouthY: 0.75 }),
-          L("С", "#2E86FF", "dots", "#1B4FB5", "on", { eyeY: 0.47, mouthY: 0.76, eyeLX: 0.34, eyeRX: 0.66 }),
-          L("Т", "#A64CFF", "dots", "#6526A8", "off"),
           L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
-          L("Н", "#00B884", "lines", "#067A5A", "on", { eyeY: 0.45, mouthY: 0.75 }),
+          L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
+          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
         ],
       },
     ],
@@ -128,6 +125,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ДОП",
         emoji: "⚽",
+        voiced: true,
         letters: [
           L("Д", "#4F6DFF", "dots", "#2439B8", "off"),
           L("О", "#FF6B2C", "lines", "#B74711", "on", { eyeY: 0.42, mouthY: 0.73 }),
@@ -142,6 +140,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ЕШКІ",
         emoji: "🐐",
+        voiced: true,
         letters: [
           L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75 }),
           L("Ш", "#A64CFF", "dots", "#6526A8", "off"),
@@ -157,6 +156,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ЖЕР",
         emoji: "🌍",
+        voiced: true,
         letters: [
           L("Ж", "#FF8A00", "lines", "#B85D00", "on", { eyeY: 0.44, mouthY: 0.73, eyeLX: 0.31, eyeRX: 0.69 }),
           L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75 }),
@@ -171,6 +171,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ЗЫМЫРАН",
         emoji: "🚀",
+        voiced: true,
         letters: [
           L("З", "#9C27B0", "dots", "#6A1B7A", "off"),
           L("Ы", "#FF7A00", "lines", "#B35700", "on", { eyeY: 0.45, mouthY: 0.75 }),
@@ -189,6 +190,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ИТ",
         emoji: "🐕",
+        voiced: true,
         letters: [
           L("И", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
           L("Т", "#607D8B", "dots", "#3D4F5C", "off"),
@@ -202,6 +204,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "КЕМЕ",
         emoji: "🚢",
+        voiced: true,
         letters: [
           L("К", "#26C24A", "lines", "#12802D", "off"),
           L("Е", "#4F6DFF", "dots", "#2439B8", "on", { eyeY: 0.46, mouthY: 0.75 }),
@@ -217,6 +220,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ҚАР",
         emoji: "❄️",
+        voiced: true,
         letters: [
           L("Қ", "#5C9CEE", "dots", "#2E5F9E", "off"),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
@@ -231,6 +235,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ЛИМОН",
         emoji: "🍋",
+        voiced: true,
         letters: [
           L("Л", "#FFEB3B", "spots", "#B89F0A", "off"),
           L("И", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
@@ -247,6 +252,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "МЫСЫҚ",
         emoji: "🐱",
+        voiced: true,
         letters: [
           L("М", "#FF6B2C", "lines", "#B74711", "on", { eyeY: 0.44, mouthY: 0.74 }),
           L("Ы", "#2E86FF", "dots", "#1B4FB5", "on", { eyeY: 0.45, mouthY: 0.75 }),
@@ -263,6 +269,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "НАЙЗАҒАЙ",
         emoji: "⚡",
+        voiced: true,
         letters: [
           L("Н", "#00B884", "lines", "#067A5A", "on", { eyeY: 0.45, mouthY: 0.75 }),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
@@ -282,6 +289,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ЖАҢБЫР",
         emoji: "🌧️",
+        voiced: true,
         letters: [
           L("Ж", "#FF8A00", "lines", "#B85D00", "on", { eyeY: 0.44, mouthY: 0.73, eyeLX: 0.31, eyeRX: 0.69 }),
           L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
@@ -299,6 +307,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ОЙЫН",
         emoji: "🎮",
+        voiced: true,
         letters: [
           L("О", "#FF6B2C", "lines", "#B74711", "on", { eyeY: 0.42, mouthY: 0.73 }),
           L("Й", "#7C4DFF", "dots", "#4A2FA3", "off"),
@@ -314,6 +323,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ӨРМЕКШІ",
         emoji: "🕷️",
+        voiced: true,
         letters: [
           L("Ө", "#FF7043", "dots", "#B54D2E", "off"),
           L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
@@ -332,6 +342,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ПІЛ",
         emoji: "🐘",
+        voiced: true,
         letters: [
           L("П", "#78909C", "dots", "#4A5B63", "off"),
           L("І", "#FF6B9D", "lines", "#B83D6E", "on", { eyeY: 0.34, mouthY: 0.72 }),
@@ -341,6 +352,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ПОЙЫЗ",
         emoji: "🚂",
+        voiced: true,
         letters: [
           L("П", "#5D4037", "lines", "#3E2B24", "off"),
           L("О", "#FF8A00", "lines", "#B85D00", "on", { eyeY: 0.42, mouthY: 0.73 }),
@@ -357,6 +369,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "РАДИО",
         emoji: "📻",
+        voiced: true,
         letters: [
           L("Р", "#E53935", "dots", "#9E2623", "off"),
           L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
@@ -373,6 +386,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "САҒАТ",
         emoji: "🕐",
+        voiced: true,
         letters: [
           L("С", "#2E86FF", "dots", "#1B4FB5", "on", { eyeY: 0.47, mouthY: 0.76 }),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
@@ -389,6 +403,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ТАУЫҚ",
         emoji: "🐔",
+        voiced: true,
         letters: [
           L("Т", "#FF7043", "dots", "#B54D2E", "off"),
           L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
@@ -405,6 +420,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "УАҚЫТ",
         emoji: "⏰",
+        voiced: true,
         letters: [
           L("У", "#26C24A", "lines", "#12802D", "on", { eyeY: 0.44, mouthY: 0.74 }),
           L("А", "#FF3B3B", "dots", "#B81F1F", "on", faceA.faceLayout),
@@ -421,6 +437,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ҰШАҚ",
         emoji: "✈️",
+        voiced: true,
         letters: [
           L("Ұ", "#FFB000", "lines", "#B37700", "on", { eyeY: 0.45, mouthY: 0.75 }),
           L("Ш", "#A64CFF", "dots", "#6526A8", "off"),
@@ -436,6 +453,7 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       {
         word: "ҮКІ",
         emoji: "🦉",
+        voiced: true,
         letters: [
           L("Ү", "#7C4DFF", "dots", "#4A2FA3", "on", { eyeY: 0.34, mouthY: 0.74 }),
           L("К", "#26C24A", "lines", "#12802D", "off"),
