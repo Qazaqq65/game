@@ -18,6 +18,8 @@ interface DraggableTileProps {
   readingWave?: boolean;
   /** Көршілес буквалар арасындағы стаггер (мс). */
   readingWaveStepMs?: number;
+  /** Сан раунд арасы: жасыл «керемет» пульс (оқу толқыны кезінде). */
+  celebrationTone?: "default" | "digitSeamless";
   onPointerDown: (
     e: React.PointerEvent<HTMLDivElement>,
     tileIndex: number
@@ -37,6 +39,7 @@ function DraggableTileInner({
   isLowEnd,
   readingWave = false,
   readingWaveStepMs = 230,
+  celebrationTone = "default",
   onPointerDown,
   onPointerMove,
   onPointerEnd,
@@ -64,7 +67,9 @@ function DraggableTileInner({
   const wavePlay =
     readingWave && tile.snapped && tile.atSlot != null && !isDragging;
   const innerClass = wavePlay
-    ? `${styles.readingWaveInner} ${styles.readingWaveActive}`
+    ? celebrationTone === "digitSeamless"
+      ? `${styles.readingWaveInner} ${styles.readingWaveActiveDigitSeamless}`
+      : `${styles.readingWaveInner} ${styles.readingWaveActive}`
     : styles.readingWaveInner;
   const innerStyle: React.CSSProperties | undefined = wavePlay
     ? { animationDelay: `${(tile.atSlot ?? 0) * readingWaveStepMs}ms` }
@@ -120,6 +125,7 @@ export const DraggableTile = memo(
     a.letter === b.letter &&
     a.readingWave === b.readingWave &&
     a.readingWaveStepMs === b.readingWaveStepMs &&
+    a.celebrationTone === b.celebrationTone &&
     a.onPointerDown === b.onPointerDown &&
     a.onPointerMove === b.onPointerMove &&
     a.onPointerEnd === b.onPointerEnd

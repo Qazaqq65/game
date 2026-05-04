@@ -30,7 +30,7 @@ interface WinScreenProps {
   /** false — overlay жасырылған, бірақ компонент DOM-да қалуы мүмкін (Lottie қайта құралмасын). */
   visible: boolean;
   /**
-   * Сан / фигуралар — Lottie парады қолданылмайды, қысқа статикалық жеңіс.
+   * Сан / пішіндер — Lottie парады қолданылмайды, қысқа статикалық жеңіс.
    * Әріптер режимінде әдепкі «letters».
    */
   variant?: "letters" | "digits" | "figures";

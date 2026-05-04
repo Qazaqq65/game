@@ -10,13 +10,13 @@ function F(
 }
 
 /**
- * Фигуралар: 3 деңгей (меню карточкалары + арнайы FigureLevelBoard).
+ * Пішіндер: 3 деңгей (меню карточкалары + арнайы FigureLevelBoard).
  */
 export const FIGURE_LEVELS: WordDef[] = [
   {
     word: "FIG1",
-    puzzleTitle: "Фигуралармен танысу",
-    menuSubtitle: "LEVEL 1 — Знакомство с фигурами",
+    puzzleTitle: "Пішіндермен танысу",
+    menuSubtitle: "LEVEL 1 — пішіндермен танысу",
     levelNumber: 1,
     emoji: "🔷",
     voiced: false,
@@ -25,8 +25,8 @@ export const FIGURE_LEVELS: WordDef[] = [
   },
   {
     word: "FIG2",
-    puzzleTitle: "Фигураны тап",
-    menuSubtitle: "LEVEL 2 — Найди фигуру",
+    puzzleTitle: "Пішінді тап",
+    menuSubtitle: "LEVEL 2 — пішінді табу",
     levelNumber: 2,
     emoji: "🔍",
     voiced: false,
@@ -36,7 +36,7 @@ export const FIGURE_LEVELS: WordDef[] = [
   {
     word: "FIG3",
     puzzleTitle: "Сұрыптау",
-    menuSubtitle: "LEVEL 3 — Сортировка",
+    menuSubtitle: "LEVEL 3 — сұрыптау",
     levelNumber: 3,
     emoji: "📊",
     voiced: false,

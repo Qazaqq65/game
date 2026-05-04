@@ -27,6 +27,8 @@ import type { WordDef } from "../types";
 import { useDeviceTier } from "../hooks/useDeviceTier";
 import {
   MENU_CARD_TONES,
+  MENU_LETTER_TONE_ALMA,
+  MENU_LETTER_TONE_ARA,
   menuToneIndexForDigitCard,
   menuToneIndexForLetterCard,
   type MenuCardToneCss,
@@ -533,7 +535,7 @@ export function EntryMenu({
             ref={categoryTrackRef}
             className={styles.categorySwitch}
             role="group"
-            aria-label="Әріптер, сандар немесе фигуралар"
+            aria-label="Әріптер, сандар немесе пішіндер"
           >
             <motion.div
               aria-hidden
@@ -585,7 +587,7 @@ export function EntryMenu({
               aria-pressed={menuCategory === "figures"}
               onClick={() => setMenuCategory("figures")}
             >
-              Фигуралар
+              Пішіндер
             </button>
           </div>
           {menuCategory === "letters" ? (
@@ -704,7 +706,7 @@ export function EntryMenu({
               <nav
                 ref={figureFilterNavRef}
                 className={styles.filter}
-                aria-label="Фигура деңгейі"
+                aria-label="Пішіндер деңгейі"
               >
                 {figureLevels.map(w => {
                   const lvl = w.levelNumber;
@@ -777,14 +779,19 @@ export function EntryMenu({
               }
             >
             {flatItems.map((item, i) => {
-              const tone =
-                menuCategory === "digits" || menuCategory === "figures"
-                  ? MENU_CARD_TONES[
-                      menuToneIndexForDigitCard(item.word.levelNumber)
-                    ]
-                  : MENU_CARD_TONES[
-                      menuToneIndexForLetterCard(item.startsWithLetter, i)
-                    ];
+              const tone: MenuCardToneCss = (() => {
+                if (menuCategory === "digits" || menuCategory === "figures") {
+                  return MENU_CARD_TONES[
+                    menuToneIndexForDigitCard(item.word.levelNumber)
+                  ];
+                }
+                const w = item.word.word.trim();
+                if (w === "АЛМА") return MENU_LETTER_TONE_ALMA;
+                if (w === "АРА") return MENU_LETTER_TONE_ARA;
+                return MENU_CARD_TONES[
+                  menuToneIndexForLetterCard(item.startsWithLetter, i)
+                ];
+              })();
               const isCenter = centeredCardIdx === i;
               const centerScale = reduceMotion ? 1 : isCenter ? 1.03 : 0.97;
               const centerOpacity = reduceMotion ? 1 : isCenter ? 1 : 0.82;
@@ -921,11 +928,11 @@ export function EntryMenu({
                 className={`${styles.card} ${styles.cardComingSoon}`}
                 data-menu-card
                 role="note"
-                aria-label="Келесі фигура тапсырмалары жақында."
+                aria-label="Келесі пішін тапсырмалары жақында."
               >
                 <span className={styles.cardInner}>
                   <span className={styles.cardComingSoonText}>
-                    Келесі фигура деңгейлері
+                    Келесі пішін деңгейлері
                     <br />
                     Жақында қосылады
                   </span>

@@ -42,6 +42,12 @@ interface PuzzleBoardProps {
   onAlmostWin?: () => void;
   /** Жеңіс экраны қажет кезде (won=true) — WinScreen сыртта тұрса. */
   onWinReady?: () => void;
+  /** Сан 3-раундтық деңгей: WinScreenсыз қысқа жеңіс → келесі тапсырма. */
+  seamlessRoundWin?: boolean;
+  /** Келесі тапсырмаға өтер алдында тақта мен нұсқау «ұшып» кетуі. */
+  digitRoundBoardExit?: boolean;
+  /** 3 тапсырмалы сан деңгейі: орындалған / барлығы (жұлдыз жолы). */
+  digitRoundProgress?: { done: number; total: number } | null;
 }
 
 function PuzzleBoardImpl({
@@ -59,6 +65,9 @@ function PuzzleBoardImpl({
   totalLevels,
   onAlmostWin,
   onWinReady,
+  seamlessRoundWin = false,
+  digitRoundBoardExit = false,
+  digitRoundProgress = null,
 }: PuzzleBoardProps) {
   const [measured, setMeasured] = useState<{ w: number; h: number } | null>(
     null
@@ -101,18 +110,20 @@ function PuzzleBoardImpl({
     return () => mq.removeEventListener("change", fn);
   }, []);
 
+  const digitHintExtra = word.gameInstruction?.trim() ? 40 : 0;
+
   const shellContentInsets = useMemo(() => {
     if (!showGameBar) return null;
     return compactShellBars
       ? {
-          top: SHELL_UI_INSET_TOP_LANDSCAPE_SHORT,
+          top: SHELL_UI_INSET_TOP_LANDSCAPE_SHORT + digitHintExtra,
           bottom: SHELL_UI_INSET_BOTTOM_LANDSCAPE_SHORT,
         }
       : {
-          top: SHELL_UI_INSET_TOP,
+          top: SHELL_UI_INSET_TOP + digitHintExtra,
           bottom: SHELL_UI_INSET_BOTTOM,
         };
-  }, [showGameBar, compactShellBars]);
+  }, [showGameBar, compactShellBars, digitHintExtra]);
 
   const effW = measured?.w ?? width;
   const effH = measured?.h ?? height;
@@ -154,6 +165,7 @@ function PuzzleBoardImpl({
     shellContentInsets,
     onComplete,
     onAlmostWin,
+    seamlessRoundWin,
   });
 
   useEffect(() => {
@@ -190,6 +202,7 @@ function PuzzleBoardImpl({
           x={pos.x}
           y={pos.y}
           showGlyph={!word.hideSlotGlyph}
+          hintGlyph={Boolean(word.slotGlyphFaintHint && word.hideSlotGlyph)}
           frameTone={
             slotFrameAccent?.slotIndex === i
               ? slotFrameAccent.tone
@@ -211,6 +224,9 @@ function PuzzleBoardImpl({
           isLowEnd={isLowEnd}
           readingWave={readingWave}
           readingWaveStepMs={readingWaveStepMs}
+          celebrationTone={
+            seamlessRoundWin && readingWave ? "digitSeamless" : "default"
+          }
           onPointerDown={onTilePointerDown}
           onPointerMove={onTilePointerMove}
           onPointerEnd={onTilePointerEnd}
@@ -246,11 +262,20 @@ function PuzzleBoardImpl({
 
   const objectHint = word.objectHint;
   const equationHint = word.equationHint;
+  const showDigitGameHint = Boolean(word.gameInstruction?.trim());
 
   return (
     <>
-    <div ref={rootRef} className={styles.shell}>
+    <div
+      ref={rootRef}
+      className={`${styles.shell}${showDigitGameHint ? ` ${styles.shellWithDigitHint}` : ""}`}
+    >
       <MotionConfig reducedMotion={dragIdx !== null ? "always" : "user"}>
+        <div
+          className={`${styles.roundPlayStack}${
+            digitRoundBoardExit ? ` ${styles.roundPlayStackExit}` : ""
+          }`}
+        >
         <div
           className={styles.boardBackdrop}
           style={{ background: boardSurfaceBg }}
@@ -319,39 +344,75 @@ function PuzzleBoardImpl({
           </div>
         ) : null}
         <div className={styles.tileLayer}>{tilesContent}</div>
+        </div>
       </MotionConfig>
 
-      <div className={styles.topBar}>
-        <div className={styles.topBarSide}>
-          <button
-            type="button"
-            className={styles.homeBtn}
-            onClick={onNavigateHome}
-            aria-label="Басты бетке"
-          >
-            Үй
-          </button>
-        </div>
-        <div className={styles.levelBadge}>
-          {levelIndex} / {totalLevels}
-        </div>
-        <div className={styles.topBarSide}>
-          {fullscreenOk ? (
+      <div className={styles.topChrome}>
+        <div className={styles.topBar}>
+          <div className={styles.topBarSide}>
             <button
               type="button"
-              className={styles.fullscreenBtn}
-              onClick={onFullscreenClick}
-              aria-pressed={fullscreenOn}
-              aria-label={
-                fullscreenOn
-                  ? "Толық экраннан шығу"
-                  : "Толық экран (браузер панелін жасыру)"
-              }
+              className={styles.homeBtn}
+              onClick={onNavigateHome}
+              aria-label="Басты бетке"
             >
-              {fullscreenOn ? "⇲" : "⇱"}
+              Үй
             </button>
-          ) : null}
+          </div>
+          <div className={styles.topBarCenter}>
+            <div className={styles.levelBadge}>
+              {levelIndex} / {totalLevels}
+            </div>
+            {digitRoundProgress != null && digitRoundProgress.total > 0 ? (
+              <div
+                className={styles.starTrack}
+                role="img"
+                aria-label={`Тапсырма: ${digitRoundProgress.done} орындалды, ${digitRoundProgress.total} ішінен`}
+              >
+                {Array.from({ length: digitRoundProgress.total }, (_, i) => {
+                  const filled = i < digitRoundProgress.done;
+                  const current =
+                    !filled && i === digitRoundProgress.done;
+                  return (
+                    <span
+                      key={i}
+                      className={`${styles.star} ${
+                        filled
+                          ? styles.starFilled
+                          : current
+                            ? styles.starCurrent
+                            : styles.starFuture
+                      }`}
+                      aria-hidden
+                    >
+                      {filled ? "★" : "☆"}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+          <div className={styles.topBarSide}>
+            {fullscreenOk ? (
+              <button
+                type="button"
+                className={styles.fullscreenBtn}
+                onClick={onFullscreenClick}
+                aria-pressed={fullscreenOn}
+                aria-label={
+                  fullscreenOn
+                    ? "Толық экраннан шығу"
+                    : "Толық экран (браузер панелін жасыру)"
+                }
+              >
+                {fullscreenOn ? "⇲" : "⇱"}
+              </button>
+            ) : null}
+          </div>
         </div>
+        {showDigitGameHint ? (
+          <p className={styles.digitGameHint}>{word.gameInstruction}</p>
+        ) : null}
       </div>
 
       <div className={styles.bottomBar}>

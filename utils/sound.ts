@@ -78,12 +78,30 @@ function playPuzzleFeedbackHowl(h: Howl): void {
   }
 }
 
+/** Сан/сөз: snap дыбысы біткен соң мадақтауға қысқа тыныс (мс). */
+export const SNAP_TO_CORRECT_FEEDBACK_GAP_MS = 165;
+
+export type PlayPuzzleCorrectFeedbackOptions = {
+  /** >0 — мадақтауды кейінге жылжыту (snap соңынан ажырату). */
+  delayMs?: number;
+};
+
 /** Дұрыс slotқа snap — мадақтау. */
-export function playPuzzleCorrectFeedbackSound(): void {
-  unlockAudio();
-  stopSound();
-  const file = pickFeedbackFile(PUZZLE_CORRECT_FEEDBACK_FILES);
-  playPuzzleFeedbackHowl(ensurePuzzleFeedbackHowl(file));
+export function playPuzzleCorrectFeedbackSound(
+  opts?: PlayPuzzleCorrectFeedbackOptions
+): void {
+  const delayMs = opts?.delayMs ?? 0;
+  const run = () => {
+    unlockAudio();
+    stopSound();
+    const file = pickFeedbackFile(PUZZLE_CORRECT_FEEDBACK_FILES);
+    playPuzzleFeedbackHowl(ensurePuzzleFeedbackHowl(file));
+  };
+  if (delayMs > 0) {
+    window.setTimeout(run, delayMs);
+  } else {
+    run();
+  }
 }
 
 /** Қате слот — үйрету дыбысы. */
@@ -366,6 +384,59 @@ export function playLetterSnapSound(
   }
   h.once("load", playIt);
   return true;
+}
+
+function howlPlayingSafe(h: Howl): boolean {
+  try {
+    return typeof h.playing === "function" && h.playing();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Сан snap әлі ойнап жатқанда жеңіс мадақтауын қоспау: snap howl «end» соңына
+ * қысқа кідіріс, содан кейін мадақтау. ensureLetterSnapHowl анықталғаннан кейін тұрады.
+ */
+export function playPuzzleCorrectFeedbackAfterSnap(ch: string): void {
+  const runPraise = () => {
+    try {
+      playPuzzleCorrectFeedbackSound({ delayMs: SNAP_TO_CORRECT_FEEDBACK_GAP_MS });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn("[sound] playPuzzleCorrectFeedbackSound after snap", e);
+      }
+    }
+  };
+
+  if (!ch || typeof ch !== "string") {
+    runPraise();
+    return;
+  }
+
+  try {
+    unlockAudio();
+    const h = ensureLetterSnapHowl(ch);
+    const schedule = () => {
+      if (howlPlayingSafe(h)) {
+        h.once("end", runPraise);
+        return;
+      }
+      requestAnimationFrame(() => {
+        if (howlPlayingSafe(h)) {
+          h.once("end", runPraise);
+        } else {
+          runPraise();
+        }
+      });
+    };
+    queueMicrotask(schedule);
+  } catch (e) {
+    if (import.meta.env.DEV) {
+      console.warn("[sound] playPuzzleCorrectFeedbackAfterSnap", e);
+    }
+    runPraise();
+  }
 }
 
 // ── Сөздің толық дыбысталуы (Алма.MP3 т.б.) ───────────────────────

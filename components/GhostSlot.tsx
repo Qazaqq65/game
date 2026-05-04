@@ -8,6 +8,8 @@ interface GhostSlotProps {
   y: number;
   /** false — орын бос «карман», дұрыс белгі көрсетілмейді (сан санау т.б.) */
   showGlyph?: boolean;
+  /** showGlyph=false болса: карман ішінде әлсіз цифра-нұсқа (Сандар реті). */
+  hintGlyph?: boolean;
   /** Қате жауап тасталғанда қызыл; дұрыс snap — жасыл жиек. */
   frameTone?: "neutral" | "wrong" | "ok";
 }
@@ -22,6 +24,7 @@ function GhostSlotInner({
   x,
   y,
   showGlyph = true,
+  hintGlyph = false,
   frameTone = "neutral",
 }: GhostSlotProps) {
   const strokeColor =
@@ -113,6 +116,23 @@ function GhostSlotInner({
             stroke={strokeColor}
             strokeWidth={accentWide ? 3.2 : 2.8}
           />
+          {hintGlyph ? (
+            <text
+              x={size / 2}
+              y={top + h * 0.72}
+              textAnchor="middle"
+              fontSize={Math.min(h * 0.58, size * 0.52)}
+              fontWeight="900"
+              fontFamily={FONT_DISPLAY_KZ}
+              fill="rgba(126,111,96,0.2)"
+              stroke="rgba(126,111,96,0.12)"
+              strokeWidth={size * 0.012}
+              strokeLinejoin="round"
+              paintOrder="stroke"
+            >
+              {ch}
+            </text>
+          ) : null}
         </svg>
       </div>
     );

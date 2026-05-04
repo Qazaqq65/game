@@ -352,8 +352,12 @@ export const DIGIT_LEVELS: WordDef[] = [
   {
     word: "0123456789",
     puzzleTitle: "Сандармен танысу",
+    gameInstruction:
+      "Әр санды өз орнына сүйреп қойыңыз: 0-ден 9-ға дейін ретімен.",
     menuSubtitle: "",
     levelNumber: 1,
+    /** Алдымен 3 цифра, орналасқан соң келесі үш, соңында 9. */
+    digitIntroWaveSize: 3,
     emoji: "🔢",
     voiced: false,
     letters: [
@@ -371,7 +375,9 @@ export const DIGIT_LEVELS: WordDef[] = [
   },
   {
     word: "0",
-    puzzleTitle: "Заттарды санау",
+    puzzleTitle: "Алмаларды санау",
+    gameInstruction:
+      "Алмаларды санап, дұрыс санды таңдап төменгі орынға қойыңыз.",
     menuSubtitle: "",
     levelNumber: 2,
     emoji: "🍎",
@@ -382,11 +388,14 @@ export const DIGIT_LEVELS: WordDef[] = [
   {
     word: "456",
     puzzleTitle: "Сандар реті",
+    gameInstruction:
+      "Сандарды кішіден үлкенге, солдан оңға қойыңыз. Кармандағы әлсіз сан қай жерге қойылатынын көрсетеді.",
     menuSubtitle: "",
     levelNumber: 3,
     emoji: "📊",
     voiced: false,
     digitOrderDrag: true,
+    slotGlyphFaintHint: true,
     letters: [
       D("4", "#E91E8C", "lines", "#9C145E"),
       D("5", "#7C4DFF", "dots", "#4A2FA3"),
@@ -396,6 +405,8 @@ export const DIGIT_LEVELS: WordDef[] = [
   {
     word: "+",
     puzzleTitle: "Қосу",
+    gameInstruction:
+      "Қосу есебін шығар.",
     menuSubtitle: "",
     levelNumber: 4,
     emoji: "➕",
@@ -406,6 +417,8 @@ export const DIGIT_LEVELS: WordDef[] = [
   {
     word: "−",
     puzzleTitle: "Азайту",
+    gameInstruction:
+      "Азайту есебін шығар",
     menuSubtitle: "",
     levelNumber: 5,
     emoji: "➖",

@@ -25,16 +25,16 @@ const STAGE_HINTS: Record<
   { title: string; body: string }
 > = {
   intro: {
-    title: "Фигуралармен танысу",
+    title: "Пішіндермен танысу",
     body: "Дөңес бұрыштар, шеңбер, үшбұрыш — кейін міне осылармен ойнаймыз.",
   },
   find: {
-    title: "Фигураны тап",
-    body: "Көрсетілген фигураны табу тапсырмасы жақында қосылады.",
+    title: "Пішінді тап",
+    body: "Көрсетілген пішінді табу тапсырмасы жақында қосылады.",
   },
   sort: {
     title: "Сұрыптау",
-    body: "Фигураларды топтарға бөлу жақында қосылады.",
+    body: "Пішіндерді топтарға бөлу жақында қосылады.",
   },
 };
 
@@ -119,36 +119,38 @@ export function FigureLevelBoard({
         </button>
       </div>
 
-      <div className={pbStyles.topBar}>
-        <div className={pbStyles.topBarSide}>
-          <button
-            type="button"
-            className={pbStyles.homeBtn}
-            onClick={onNavigateHome}
-            aria-label="Басты бетке"
-          >
-            Үй
-          </button>
-        </div>
-        <div className={pbStyles.levelBadge}>
-          {levelIndex} / {totalLevels}
-        </div>
-        <div className={pbStyles.topBarSide}>
-          {fullscreenOk ? (
+      <div className={pbStyles.topChrome}>
+        <div className={pbStyles.topBar}>
+          <div className={pbStyles.topBarSide}>
             <button
               type="button"
-              className={pbStyles.fullscreenBtn}
-              onClick={onFullscreenClick}
-              aria-pressed={fullscreenOn}
-              aria-label={
-                fullscreenOn
-                  ? "Толық экраннан шығу"
-                  : "Толық экран (браузер панелін жасыру)"
-              }
+              className={pbStyles.homeBtn}
+              onClick={onNavigateHome}
+              aria-label="Басты бетке"
             >
-              {fullscreenOn ? "⇲" : "⇱"}
+              Үй
             </button>
-          ) : null}
+          </div>
+          <div className={pbStyles.levelBadge}>
+            {levelIndex} / {totalLevels}
+          </div>
+          <div className={pbStyles.topBarSide}>
+            {fullscreenOk ? (
+              <button
+                type="button"
+                className={pbStyles.fullscreenBtn}
+                onClick={onFullscreenClick}
+                aria-pressed={fullscreenOn}
+                aria-label={
+                  fullscreenOn
+                    ? "Толық экраннан шығу"
+                    : "Толық экран (браузер панелін жасыру)"
+                }
+              >
+                {fullscreenOn ? "⇲" : "⇱"}
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 

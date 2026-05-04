@@ -43,13 +43,14 @@ export const WORD_MENU_GROUPS: { letter: string; words: WordDef[] }[] = [
       },
       {
         word: "АРА",
-        emoji: "🦜",
+        emoji: "🐝",
         svgSrc: "/svg/bee.svg",
         voiced: true,
         letters: [
-          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
+          /* АЛМАдағы А-дан өзге реңк (екеуі бір жасыл болып кетпесін) */
+          L("А", "#0d9488", "lines", "#0f766e", "on", faceA.faceLayout),
           L("Р", "#2E86FF", "dots", "#1B4FB5", "off"),
-          L("А", "#26C24A", "lines", "#12802D", "on", faceA.faceLayout),
+          L("А", "#0d9488", "lines", "#0f766e", "on", faceA.faceLayout),
         ],
       },
     ],

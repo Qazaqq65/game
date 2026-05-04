@@ -614,14 +614,29 @@
   );
 }
 
-/* Сандар: деңгей мәтіні бір биіктікте, сурет ортасы тең, тақырып астына бекітілген */
+/* Сандар: деңгей мәтіні бір биіктікте, сурет ортасы тең, тақырып астына бекітілген; карта жарқырау */
 .card[data-category="digits"] .cardInner {
   justify-content: flex-start;
   background: color-mix(
     in srgb,
-    var(--card-accent, var(--menu-peach)) 8%,
-    rgba(255, 254, 252, 0.99)
+    var(--card-accent, var(--menu-peach)) 18%,
+    rgba(255, 253, 250, 0.995)
   );
+  border: 1.5px solid
+    color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 46%,
+      rgba(90, 70, 55, 0.14)
+    );
+  box-shadow:
+    0 4px 18px
+      color-mix(
+        in srgb,
+        var(--card-accent, var(--menu-peach)) 24%,
+        rgba(75, 58, 45, 0.1)
+      ),
+    0 2px 0 rgba(255, 255, 255, 0.65) inset,
+    0 1px 0 rgba(90, 70, 55, 0.06);
 }
 
 .card[data-category="digits"] .cardLevel {
@@ -639,10 +654,10 @@
   color: var(--card-accent, var(--menu-lilac));
   background: color-mix(
     in srgb,
-    var(--card-accent) 14%,
-    rgba(255, 255, 255, 0.94)
+    var(--card-accent) 22%,
+    rgba(255, 255, 255, 0.97)
   );
-  border: 1px solid color-mix(in srgb, var(--card-accent) 32%, rgba(90, 70, 55, 0.1));
+  border: 1px solid color-mix(in srgb, var(--card-accent) 40%, rgba(90, 70, 55, 0.09));
 }
 
 .card[data-category="digits"] .cardEmoji {
@@ -671,19 +686,97 @@
   justify-content: center;
   text-align: center;
   line-height: 1.22;
-  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 50%, #231d18);
+  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 42%, #151210);
 }
 
+.card[data-category="digits"] .cardEmoji,
+.card[data-category="digits"] .cardEmojiImg {
+  filter: brightness(1.05) saturate(1.1)
+    var(
+      --card-emoji-shadow,
+      drop-shadow(0 3px 8px rgba(60, 48, 38, 0.12))
+    );
+}
+
+/* Әріптер: карточкаларды сандар/пішіндерден анықтау — жылырақ фон, қанық жиек, жеңіл көлеңке */
 .card[data-category="letters"] .cardInner {
   background: color-mix(
     in srgb,
-    var(--card-accent, var(--menu-peach)) 11%,
-    color-mix(in srgb, #fffefb 10%, var(--card-surface, var(--entry-menu-bg)))
+    var(--card-accent, var(--menu-peach)) 24%,
+    rgba(255, 253, 250, 0.99)
   );
+  border: 1.5px solid
+    color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 52%,
+      rgba(90, 70, 55, 0.16)
+    );
+  box-shadow:
+    0 5px 20px
+      color-mix(
+        in srgb,
+        var(--card-accent, var(--menu-peach)) 30%,
+        rgba(75, 58, 45, 0.11)
+      ),
+    0 2px 0 rgba(255, 255, 255, 0.72) inset,
+    0 1px 0 rgba(90, 70, 55, 0.07);
+}
+
+@media (hover: hover) {
+  .card[data-category="letters"]:hover .cardInner {
+    background: color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 30%,
+      rgba(255, 254, 252, 0.995)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 62%,
+      rgba(90, 70, 55, 0.12)
+    );
+    box-shadow:
+      0 10px 30px
+        color-mix(
+          in srgb,
+          var(--card-accent, var(--menu-peach)) 36%,
+          rgba(75, 58, 45, 0.14)
+        ),
+      0 2px 0 rgba(255, 255, 255, 0.82) inset;
+  }
+
+  .card[data-category="digits"]:hover .cardInner {
+    background: color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 24%,
+      rgba(255, 254, 252, 0.998)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--card-accent, var(--menu-peach)) 56%,
+      rgba(90, 70, 55, 0.11)
+    );
+    box-shadow:
+      0 8px 26px
+        color-mix(
+          in srgb,
+          var(--card-accent, var(--menu-peach)) 30%,
+          rgba(75, 58, 45, 0.12)
+        ),
+      0 2px 0 rgba(255, 255, 255, 0.78) inset;
+  }
 }
 
 .card[data-category="letters"] .cardWord {
-  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 54%, #1e1815);
+  color: color-mix(in srgb, var(--card-accent, var(--menu-sage)) 38%, #12100e);
+}
+
+.card[data-category="letters"] .cardEmoji,
+.card[data-category="letters"] .cardEmojiImg {
+  filter: brightness(1.08) saturate(1.14)
+    var(
+      --card-emoji-shadow,
+      drop-shadow(0 3px 8px rgba(60, 48, 38, 0.12))
+    );
 }
 
 .cardWord {

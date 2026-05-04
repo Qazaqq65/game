@@ -42,16 +42,18 @@ const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3, 4]);
 const DIGIT_MULTI_ROUND_TOTAL = 3;
 
 const bgMusicControlBtnStyle: CSSProperties = {
-  padding: "7px 12px",
-  fontSize: 18,
+  padding: "4px 6px",
+  fontSize: 22,
   lineHeight: 1,
-  borderRadius: 10,
+  borderRadius: 8,
   border: "none",
-  background: "rgba(255,255,255,0.85)",
-  backdropFilter: "blur(6px)",
-  color: "#555",
+  background: "transparent",
+  color: "rgba(55, 48, 42, 0.82)",
   cursor: "pointer",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+  boxShadow: "none",
+  textShadow:
+    "0 0 10px rgba(255,255,255,0.85), 0 1px 2px rgba(255,255,255,0.6)",
+  WebkitTapHighlightColor: "transparent",
 };
 
 function BackgroundMusicControls({
@@ -60,34 +62,31 @@ function BackgroundMusicControls({
   onToggle,
   onVolumeChange,
   buttonStyle,
-  compact,
 }: {
   on: boolean;
   volume: number;
   onToggle: () => void;
   onVolumeChange: (v: number) => void;
   buttonStyle?: CSSProperties;
-  /** Ойында — бір 🔊 түймесі: басқанда панель ашылады (деңгей + қосу/сөндіру). */
-  compact?: boolean;
 }) {
   const btnStyle = { ...bgMusicControlBtnStyle, ...buttonStyle };
   const pct = Math.round(
     (volume / BACKGROUND_MUSIC_VOLUME_MAX) * 100
   );
   const [volumePanelOpen, setVolumePanelOpen] = useState(false);
-  const compactWrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!compact || !volumePanelOpen) return;
+    if (!volumePanelOpen) return;
     const close = (e: MouseEvent) => {
-      const el = compactWrapRef.current;
+      const el = wrapRef.current;
       if (el && !el.contains(e.target as Node)) {
         setVolumePanelOpen(false);
       }
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, [compact, volumePanelOpen]);
+  }, [volumePanelOpen]);
 
   const rangeInput = (
     <input
@@ -102,7 +101,7 @@ function BackgroundMusicControls({
       aria-label="Фондық музыка дыбыс деңгейі"
       title="Дыбыс деңгейі"
       style={{
-        width: compact ? "min(168px, 42vw)" : "min(120px, 30vw)",
+        width: "min(168px, 42vw)",
         height: 32,
         accentColor: "#c2410c",
         cursor: "pointer",
@@ -110,106 +109,187 @@ function BackgroundMusicControls({
     />
   );
 
-  if (compact) {
-    return (
-      <div
-        ref={compactWrapRef}
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          maxWidth: "100%",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setVolumePanelOpen(o => !o)}
-          style={btnStyle}
-          aria-expanded={volumePanelOpen}
-          aria-haspopup="dialog"
-          title={
-            volumePanelOpen
-              ? "Жабу"
-              : "Фондық музыканы басқару"
-          }
-          aria-label={
-            volumePanelOpen
-              ? "Басқару панелін жабу"
-              : "Фондық музыканы басқару"
-          }
-        >
-          {on ? "🔊" : "🔇"}
-        </button>
-        {volumePanelOpen ? (
-          <div
-            role="dialog"
-            aria-label="Фондық музыка"
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              right: 0,
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.96)",
-              backdropFilter: "blur(8px)",
-              boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
-              zIndex: 10001,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: 12,
-              minWidth: "min(188px, 52vw)",
-            }}
-          >
-            {rangeInput}
-            <button
-              type="button"
-              onClick={onToggle}
-              style={{
-                padding: "8px 10px",
-                fontSize: 14,
-                fontWeight: 700,
-                fontFamily: "inherit",
-                borderRadius: 10,
-                border: "1px solid rgba(120,95,75,0.22)",
-                background: "rgba(255,255,255,0.9)",
-                color: "#444",
-                cursor: "pointer",
-              }}
-              aria-pressed={on}
-            >
-              {on ? "🔇 Музыканы сөндіру" : "🔊 Музыканы қосу"}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div
+      ref={wrapRef}
       style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
-        gap: 8,
         maxWidth: "100%",
       }}
     >
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => setVolumePanelOpen(o => !o)}
         style={btnStyle}
+        aria-expanded={volumePanelOpen}
+        aria-haspopup="dialog"
         title={
-          on
-            ? "Фондық музыканы сөндіру"
-            : "Фондық музыканы қосу"
+          volumePanelOpen
+            ? "Жабу"
+            : "Фондық музыканы басқару"
         }
-        aria-pressed={on}
-        aria-label={on ? "Фонды сөндіру" : "Фонды қосу"}
+        aria-label={
+          volumePanelOpen
+            ? "Басқару панелін жабу"
+            : "Фондық музыканы басқару"
+        }
       >
         {on ? "🔊" : "🔇"}
       </button>
-      {rangeInput}
+      {volumePanelOpen ? (
+        <div
+          role="dialog"
+          aria-label="Фондық музыка"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 8px)",
+            bottom: "auto",
+            padding: "12px 14px",
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.96)",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
+            zIndex: 10001,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+            gap: 12,
+            minWidth: "min(188px, 52vw)",
+          }}
+        >
+          {rangeInput}
+          <button
+            type="button"
+            onClick={onToggle}
+            style={{
+              padding: "8px 10px",
+              fontSize: 14,
+              fontWeight: 700,
+              fontFamily: "inherit",
+              borderRadius: 10,
+              border: "1px solid rgba(120,95,75,0.22)",
+              background: "rgba(255,255,255,0.9)",
+              color: "#444",
+              cursor: "pointer",
+            }}
+            aria-pressed={on}
+          >
+            {on ? "🔇 Музыканы сөндіру" : "🔊 Музыканы қосу"}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Firebase auth бірінші рет шешілгенше — бос экран орнына */
+function AppBootstrapLoading({ slowHint }: { slowHint: boolean }) {
+  return (
+    <div
+      style={{
+        minHeight: "100dvh",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 18,
+        background: "var(--game-anchor-soft)",
+        boxSizing: "border-box",
+        padding: 24,
+      }}
+    >
+      <div
+        className="app-boot-spinner"
+        role="status"
+        aria-live="polite"
+        aria-label="Жүктелуде"
+      />
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "var(--sans)",
+          color: "var(--game-anchor-ink)",
+          fontWeight: 700,
+          fontSize: "clamp(1rem, 4vw, 1.15rem)",
+        }}
+      >
+        Жүктелуде…
+      </p>
+      {slowHint ? (
+        <p
+          style={{
+            margin: 0,
+            fontSize: 14,
+            color: "rgba(74, 61, 53, 0.72)",
+            maxWidth: 300,
+            lineHeight: 1.45,
+          }}
+        >
+          Әлі де күтеміз. Интернет баяу болуы мүмкін.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Auth ұзақ түспесе — қайта жүктеу (қосылым сәтті болғанда автоматты жоғалады) */
+function AppBootstrapFatal({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: "100dvh",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 20,
+        background: "var(--game-anchor-soft)",
+        boxSizing: "border-box",
+        padding: 24,
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "var(--sans)",
+          color: "var(--game-anchor-ink)",
+          fontWeight: 700,
+          fontSize: "clamp(0.95rem, 3.8vw, 1.05rem)",
+          maxWidth: 320,
+          lineHeight: 1.45,
+        }}
+      >
+        {message}
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        style={{
+          padding: "12px 22px",
+          fontSize: 16,
+          fontWeight: 700,
+          fontFamily: "var(--sans)",
+          borderRadius: 12,
+          border: "1px solid rgba(120, 95, 75, 0.28)",
+          background: "rgba(255, 255, 255, 0.92)",
+          color: "var(--game-anchor-ink)",
+          cursor: "pointer",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+        }}
+      >
+        Қайта жүктеу
+      </button>
     </div>
   );
 }
@@ -250,12 +330,20 @@ function GameSession({
   const [digitRoundExcludeAnswers, setDigitRoundExcludeAnswers] = useState<
     number[]
   >([]);
+  const [winScreenVisible, setWinScreenVisible] = useState(false);
+  const [digitRoundBoardExit, setDigitRoundBoardExit] = useState(false);
+  const digitInterRoundTimeoutRef = useRef<number | null>(null);
 
   const idx = wordIdx % levels.length;
   const isDigitMultiRoundLevel =
     sessionKey === "digits" && DIGIT_MULTI_ROUND_LEVEL_INDICES.has(idx);
 
   useEffect(() => {
+    if (digitInterRoundTimeoutRef.current != null) {
+      window.clearTimeout(digitInterRoundTimeoutRef.current);
+      digitInterRoundTimeoutRef.current = null;
+    }
+    setDigitRoundBoardExit(false);
     if (!isDigitMultiRoundLevel) {
       setDigitCountRoundsDone(0);
       setDigitCountReplayKey(0);
@@ -318,25 +406,52 @@ function GameSession({
   );
   /* onNext те сол функция — жеке inline () => емес, бір сілтеме. */
 
-  const [winScreenVisible, setWinScreenVisible] = useState(false);
-
   useEffect(() => {
     setWinScreenVisible(false);
+    setDigitRoundBoardExit(false);
+    if (digitInterRoundTimeoutRef.current != null) {
+      window.clearTimeout(digitInterRoundTimeoutRef.current);
+      digitInterRoundTimeoutRef.current = null;
+    }
   }, [wordIdx]);
 
-  const onWinReady = useCallback(() => {
-    setWinScreenVisible(true);
-  }, []);
+  const seamlessDigitMidRound =
+    isDigitMultiRoundLevel &&
+    digitCountRoundsDone < DIGIT_MULTI_ROUND_TOTAL - 1;
 
+  const onWinReady = useCallback(() => {
+    if (seamlessDigitMidRound) {
+      if (digitInterRoundTimeoutRef.current != null) {
+        window.clearTimeout(digitInterRoundTimeoutRef.current);
+      }
+      setDigitRoundBoardExit(true);
+      digitInterRoundTimeoutRef.current = window.setTimeout(() => {
+        digitInterRoundTimeoutRef.current = null;
+        setDigitRoundBoardExit(false);
+        const fromCount = currentWord.objectHint?.count;
+        const eq = currentWord.equationHint;
+        const fromAdd =
+          eq != null && eq.op !== "subtract" ? eq.a + eq.b : undefined;
+        const fromSubtract =
+          eq != null && eq.op === "subtract" ? eq.a - eq.b : undefined;
+        const toExclude = fromCount ?? fromAdd ?? fromSubtract;
+        if (toExclude != null && Number.isFinite(toExclude)) {
+          setDigitRoundExcludeAnswers(prev => [...prev, toExclude]);
+        }
+        setDigitCountRoundsDone(r => r + 1);
+        setDigitCountReplayKey(k => k + 1);
+      }, 430);
+      return;
+    }
+    setWinScreenVisible(true);
+  }, [currentWord, seamlessDigitMidRound]);
+
+  /** WinScreen тек соңғы тапсырмадан кейін (аралықта WinScreen жоқ). */
   const winNextButtonLabel =
-    isDigitMultiRoundLevel && digitCountRoundsDone < DIGIT_MULTI_ROUND_TOTAL - 1
-      ? digitCountRoundsDone === 0
-        ? "Тағы 2 тапсырма →"
-        : "Тағы 1 тапсырма →"
-      : isDigitMultiRoundLevel &&
-          digitCountRoundsDone === DIGIT_MULTI_ROUND_TOTAL - 1
-        ? "Келесі деңгей →"
-        : undefined;
+    isDigitMultiRoundLevel &&
+    digitCountRoundsDone === DIGIT_MULTI_ROUND_TOTAL - 1
+      ? "Келесі деңгей →"
+      : undefined;
 
   const onWinNext = useCallback(() => {
     setWinScreenVisible(false);
@@ -386,6 +501,16 @@ function GameSession({
         onNavigatePrevWord={onNavigatePrev}
         onNavigateNextWord={onNavigateNext}
         onWinReady={onWinReady}
+        seamlessRoundWin={seamlessDigitMidRound}
+        digitRoundBoardExit={digitRoundBoardExit}
+        digitRoundProgress={
+          isDigitMultiRoundLevel
+            ? {
+                done: digitCountRoundsDone,
+                total: DIGIT_MULTI_ROUND_TOTAL,
+              }
+            : null
+        }
       />
       <WinScreen
         visible={winScreenVisible}
@@ -415,16 +540,36 @@ export default function App() {
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  /** Firebase auth ұзақ түспеген жағдай (экранда хабарлама + қайта жүктеу) */
+  const [authFatal, setAuthFatal] = useState<string | null>(null);
+  const [authSlowHint, setAuthSlowHint] = useState(false);
   const [isFs, setIsFs] = useState(false);
   const [bgMusicOn, setBgMusicOn] = useState(readBackgroundMusicPreference);
   const [bgMusicVolume, setBgMusicVolume] = useState(readBackgroundMusicVolume);
 
   useEffect(() => {
+    const slowId = window.setTimeout(() => setAuthSlowHint(true), 8000);
+    const fatalId = window.setTimeout(() => {
+      setAuthFatal(
+        "Қосылу ұзаққа созылды. Интернетті тексеріп, қайта байқап көріңіз."
+      );
+      setAuthLoading(false);
+    }, 22000);
+
     const unsub = onAuthStateChanged(auth, user => {
+      window.clearTimeout(slowId);
+      window.clearTimeout(fatalId);
+      setAuthSlowHint(false);
+      setAuthFatal(null);
       setCurrentUser(user);
       setAuthLoading(false);
     });
-    return unsub;
+
+    return () => {
+      window.clearTimeout(slowId);
+      window.clearTimeout(fatalId);
+      unsub();
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -552,7 +697,18 @@ export default function App() {
       : "var(--game-anchor-soft)",
   }), [entered, gameLandscapeShort, isAlmaSession]);
 
-  if (authLoading) return null;
+  if (authLoading && !authFatal) {
+    return <AppBootstrapLoading slowHint={authSlowHint} />;
+  }
+
+  if (authFatal) {
+    return (
+      <AppBootstrapFatal
+        message={authFatal}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   // Кнопка "Войти" → полноэкранный логин
   if (showLogin) {
@@ -565,8 +721,8 @@ export default function App() {
         <div
           style={{
             position: "fixed",
-            top: 14,
-            right: 16,
+            top: "max(8px, calc(env(safe-area-inset-top, 0px) + 4px))",
+            right: "max(10px, env(safe-area-inset-right, 0px))",
             zIndex: 1000,
           }}
         >
@@ -575,7 +731,6 @@ export default function App() {
             volume={bgMusicVolume}
             onToggle={toggleBackgroundMusic}
             onVolumeChange={handleBackgroundMusicVolume}
-            buttonStyle={{ background: "rgba(255,255,255,0.92)" }}
           />
         </div>
       </>
@@ -602,7 +757,17 @@ export default function App() {
             onPickWord={handlePickWord}
           />
 
-          <div style={{ position: "fixed", top: 14, right: 16, display: "flex", gap: 8, alignItems: "center", zIndex: 999 }}>
+          <div
+            style={{
+              position: "fixed",
+              top: "max(8px, calc(env(safe-area-inset-top, 0px) + 4px))",
+              right: "max(10px, env(safe-area-inset-right, 0px))",
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              zIndex: 999,
+            }}
+          >
             <BackgroundMusicControls
               on={bgMusicOn}
               volume={bgMusicVolume}
@@ -653,14 +818,14 @@ export default function App() {
           <div
             style={{
               position: "fixed",
-              /* Топ-бардағы ⇱ толық экран түймесінің үстіне шықпау (PuzzleBoard topBar ~60px + safe area) */
-              top: "calc(env(safe-area-inset-top, 0px) + 62px)",
-              right: 16,
+              top: "max(8px, calc(env(safe-area-inset-top, 0px) + 4px))",
+              right: "max(10px, env(safe-area-inset-right, 0px))",
+              left: "auto",
+              bottom: "auto",
               zIndex: 999,
             }}
           >
             <BackgroundMusicControls
-              compact
               on={bgMusicOn}
               volume={bgMusicVolume}
               onToggle={toggleBackgroundMusic}

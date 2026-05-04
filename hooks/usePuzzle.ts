@@ -1,7 +1,9 @@
 import React from "react";
 import {
   playLetterSnapSound,
+  playPuzzleCorrectFeedbackAfterSnap,
   playPuzzleCorrectFeedbackSound,
+  SNAP_TO_CORRECT_FEEDBACK_GAP_MS,
   playPuzzleWrongSound,
   playWordPronunciation,
   startSound,
@@ -58,7 +60,7 @@ const PRONOUNCE_FALLBACK_MS = 4500;
 /**
  * Әріп сөздері (levelNumber жоқ): mp3 мадақтау после каждого верного snap.
  * 0 — отключено; N≥2 — только каждый N-й snap (например 5 — редко).
- * Сан деңгейлері — өзге логика төменде (levelNumber === 1 т.б.).
+ * Сан деңгейлері — өзге логика төменде (levelNumber 1, 3 т.б.).
  */
 const LETTER_CORRECT_FEEDBACK_EVERY_N_SNAPS = 0;
 
@@ -353,6 +355,94 @@ function relayoutPreserveProgress(
   return { slots: newSlots, tiles: newTiles };
 }
 
+function isDigitIntroWavesWord(word: WordDef): boolean {
+  const w = word.digitIntroWaveSize;
+  if (w == null || w < 1) return false;
+  const src = tileDefSource(word);
+  return (
+    word.letters.length > w &&
+    src.length === word.letters.length
+  );
+}
+
+/**
+ * Сан танысу толқыны: 0..k-1 плиткалары дұрыс орналасқан соң келесі топты scatter-ға қосу.
+ * Тек tiles массивіне сүйенеді (ref емес) — орындалу шарты әрдайым шын күймен сәйкес келеді.
+ */
+function tryAppendDigitIntroWaveTiles(
+  word: WordDef,
+  tilesAfterSnap: TileState[],
+  containerW: number,
+  containerH: number,
+  tileSize: number,
+  contentInsets: ShellContentInsets | null
+): TileState[] {
+  if (!isDigitIntroWavesWord(word)) return tilesAfterSnap;
+
+  const src = tileDefSource(word);
+  const n = word.letters.length;
+  const wsz = word.digitIntroWaveSize!;
+
+  const present = new Set(tilesAfterSnap.map(t => t.idx));
+  let contiguous = 0;
+  while (contiguous < n && present.has(contiguous)) {
+    contiguous++;
+  }
+  if (contiguous === 0) return tilesAfterSnap;
+
+  const allSpawnedCorrect = Array.from({ length: contiguous }, (_, i) => {
+    const t = tilesAfterSnap.find(x => x.idx === i && x.snapped);
+    if (!t || t.atSlot == null) return false;
+    return src[t.idx].ch === word.letters[t.atSlot].ch;
+  }).every(Boolean);
+
+  if (!allSpawnedCorrect) return tilesAfterSnap;
+
+  if (contiguous >= n) return tilesAfterSnap;
+
+  const appendFrom = contiguous;
+  const appendTo = Math.min(appendFrom + wsz, n);
+  if (appendFrom >= appendTo) return tilesAfterSnap;
+
+  for (let j = appendFrom; j < appendTo; j++) {
+    if (present.has(j)) return tilesAfterSnap;
+  }
+
+  const countNew = appendTo - appendFrom;
+  const cw = Math.max(1, containerW);
+  const ch = Math.max(1, containerH);
+  const scattered = computeScatterPositions(
+    countNew,
+    cw,
+    ch,
+    tileSize,
+    contentInsets
+  );
+  const letterOrder = shuffleArray(
+    Array.from({ length: countNew }, (_, k) => appendFrom + k)
+  );
+
+  const append: TileState[] = letterOrder.map((letterIdx, posIdx) => {
+    const sc = scattered[posIdx];
+    return {
+      idx: letterIdx,
+      x: sc.x,
+      y: sc.y,
+      rot: sc.r,
+      scale: 1,
+      snapped: false,
+      atSlot: null,
+      ox: sc.x,
+      oy: sc.y,
+      or: sc.r,
+      isNearTarget: false,
+      phase: "idle" as const,
+    };
+  });
+
+  return [...tilesAfterSnap, ...append];
+}
+
 function draggedTileComputedState(
   rawX: number,
   rawY: number,
@@ -450,6 +540,11 @@ interface UsePuzzleOptions {
   onComplete?: (word: string) => void;
   /** placed === n−1 — WinScreen/Lottie/сөз mp3 префетч (бір рет). */
   onAlmostWin?: () => void;
+  /**
+   * Сан: бір деңгейдегі 3 тапсырманың 1–2 аяғы — WinScreenсыз қысқа мереке,
+   * содан кейін тақта қайта құрылады.
+   */
+  seamlessRoundWin?: boolean;
 }
 
 /** Тасымалдау барысында tile массивін әр кадрда қайта құрамаймыз — тек осы координаталар */
@@ -486,6 +581,10 @@ interface UsePuzzleReturn {
   reset: () => void;
 }
 
+/** seamlessRoundWin: оқу толқыны + WinScreenге дейінгі уақыт (≈1 с). */
+const SEAMLESS_ROUND_READING_CAP_MS = 520;
+const SEAMLESS_ROUND_TAIL_MS = 200;
+
 export function usePuzzle({
   word,
   containerW,
@@ -494,6 +593,7 @@ export function usePuzzle({
   shellContentInsets = null,
   onComplete,
   onAlmostWin,
+  seamlessRoundWin = false,
 }: UsePuzzleOptions): UsePuzzleReturn {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -612,8 +712,11 @@ export function usePuzzle({
   const buildTilesFresh = useCallback(() => {
     const nSlots = word.letters.length;
     const src = tileDefSource(word);
-    const nTiles = src.length;
     const insets = shellContentInsets;
+    const introWaves = isDigitIntroWavesWord(word);
+    const nTiles = introWaves
+      ? Math.min(word.digitIntroWaveSize!, nSlots)
+      : src.length;
 
     const { gapX, arcOpts, layoutMode } = slotLayoutForBoard(
       word.word,
@@ -677,7 +780,11 @@ export function usePuzzle({
     const prev = layoutDimsRef.current;
     const firstLayout = prev.w <= 0;
     const dragSig = word.dragLetters?.map(l => l.ch).join("") ?? "";
-    const wordKey = `${word.word}:${dragSig}`;
+    const waveSig =
+      word.digitIntroWaveSize != null
+        ? `:iw${word.digitIntroWaveSize}`
+        : "";
+    const wordKey = `${word.word}:${dragSig}${waveSig}`;
     const wordChanged = wordKeyRef.current !== wordKey;
 
     if (firstLayout || wordChanged) {
@@ -701,7 +808,8 @@ export function usePuzzle({
 
     const prevTiles = tilesRef.current;
     const tileCount = tileDefSource(word).length;
-    if (prevTiles.length !== tileCount) {
+    const introWavesResize = isDigitIntroWavesWord(word);
+    if (!introWavesResize && prevTiles.length !== tileCount) {
       buildTilesFresh();
       layoutDimsRef.current = {
         w: containerW,
@@ -867,6 +975,15 @@ export function usePuzzle({
           settleSnapPhase([tileIdx, occupantIdx]);
         }
 
+        next = tryAppendDigitIntroWaveTiles(
+          word,
+          next,
+          containerW,
+          containerH,
+          tileSize,
+          shellContentInsets ?? null
+        );
+
         tilesRef.current = next;
 
         queueMicrotask(() => {
@@ -881,7 +998,12 @@ export function usePuzzle({
         });
 
         const snappedAfter = next.filter(t => t.snapped).length;
+        const puzzleJustWon = checkPuzzleWin(next);
         playLetterSnapSound(ch, () => {
+          /* seamlessRoundWin: жеңіс блогында бір рет playPuzzleCorrectFeedbackSound — snap соңындағы мадақтауды қайталамау */
+          if (puzzleJustWon && seamlessRoundWin) {
+            return;
+          }
           if (word.levelNumber == null) {
             const n = LETTER_CORRECT_FEEDBACK_EVERY_N_SNAPS;
             if (
@@ -889,16 +1011,27 @@ export function usePuzzle({
               snappedAfter > 0 &&
               snappedAfter % n === 0
             ) {
-              playPuzzleCorrectFeedbackSound();
+              playPuzzleCorrectFeedbackSound({
+                delayMs: SNAP_TO_CORRECT_FEEDBACK_GAP_MS,
+              });
             }
             return;
           }
-          if (word.levelNumber === 1) {
-            if (snappedAfter % 2 === 0) {
-              playPuzzleCorrectFeedbackSound();
+          /* 1 — танысу, 3 — «Сандар реті»: мадақтау әр 2 snap + соңғы плитада (тек жұп емес n үшін). */
+          if (word.levelNumber === 1 || word.levelNumber === 3) {
+            const nSlot = word.letters.length;
+            if (
+              snappedAfter > 0 &&
+              (snappedAfter % 2 === 0 || snappedAfter === nSlot)
+            ) {
+              playPuzzleCorrectFeedbackSound({
+                delayMs: SNAP_TO_CORRECT_FEEDBACK_GAP_MS,
+              });
             }
           } else {
-            playPuzzleCorrectFeedbackSound();
+            playPuzzleCorrectFeedbackSound({
+              delayMs: SNAP_TO_CORRECT_FEEDBACK_GAP_MS,
+            });
           }
         });
 
@@ -912,7 +1045,7 @@ export function usePuzzle({
           onAlmostWin?.();
         }
 
-        if (checkPuzzleWin(next)) {
+        if (puzzleJustWon) {
           onComplete?.(word.word);
           stopSound();
 
@@ -924,41 +1057,67 @@ export function usePuzzle({
             setWon(true);
           };
 
-          // 1) Соңғы әріп snap болғанда бірден қозғалмаймыз — snap анимациясы
-          //    тынышталғанша (≈SNAP_SETTLE_MS) кідіреміз.
-          // 2) Сосын: «оқу толқыны» қосылады (буквалар кезек-кезек секіреді)
-          //    + сөздің mp3 дыбысы (бар болса) бірге басталады.
-          // 3) Дыбыс/толқын аяқталған соң қысқа тыныс паузасы → WinScreen.
-          const n = word.letters.length;
-          const waveDur = readingWaveDurationMs(n);
+          if (seamlessRoundWin) {
+            playPuzzleCorrectFeedbackAfterSnap(ch);
+            setTimeout(() => {
+              setReadingWave(true);
+            }, SNAP_SETTLE_MS);
+            const n = Math.max(1, word.letters.length);
+            const waveDur = Math.min(
+              readingWaveDurationMs(n),
+              SEAMLESS_ROUND_READING_CAP_MS
+            );
+            setTimeout(
+              advance,
+              SNAP_SETTLE_MS + waveDur + SEAMLESS_ROUND_TAIL_MS
+            );
+          } else {
+            // 1) Соңғы әріп snap болғанда бірден қозғалмаймыз — snap анимациясы
+            //    тынышталғанша (≈SNAP_SETTLE_MS) кідіреміз.
+            // 2) Сосын: «оқу толқыны» қосылады (буквалар кезек-кезек секіреді)
+            //    + сөздің mp3 дыбысы (бар болса) бірге басталады.
+            // 3) Дыбыс/толқын аяқталған соң қысқа тыныс паузасы → WinScreen.
+            const n = word.letters.length;
+            const waveDur = readingWaveDurationMs(n);
 
-          setTimeout(() => {
-            setReadingWave(true);
+            setTimeout(() => {
+              setReadingWave(true);
 
-            // Егер söz-тің толық mp3 дыбысы жоқ болса (voiced !== true),
-            // pronunciation-ді қоспай, тек толқын аяқталуын күтеміз.
-            const shouldPlayWordSound = word.voiced === true;
-            if (!shouldPlayWordSound) {
-              setTimeout(advance, waveDur + WAVE_TAIL_MS);
-              return;
-            }
+              // Егер söz-тің толық mp3 дыбысы жоқ болса (voiced !== true),
+              // pronunciation-ді қоспай, тек толқын аяқталуын күтеміз.
+              const shouldPlayWordSound = word.voiced === true;
+              if (!shouldPlayWordSound) {
+                setTimeout(advance, waveDur + WAVE_TAIL_MS);
+                return;
+              }
 
-            const started = playWordPronunciation(word.word, () => {
-              setTimeout(advance, PRONOUNCE_TAIL_MS);
-            });
-            if (started) {
-              setTimeout(advance, PRONOUNCE_FALLBACK_MS);
-            } else {
-              // Дыбыс жоқ — кем дегенде толқын аяқталғанша күтеміз.
-              setTimeout(advance, waveDur + WAVE_TAIL_MS);
-            }
-          }, PRONOUNCE_LEAD_IN_MS);
+              const started = playWordPronunciation(word.word, () => {
+                setTimeout(advance, PRONOUNCE_TAIL_MS);
+              });
+              if (started) {
+                setTimeout(advance, PRONOUNCE_FALLBACK_MS);
+              } else {
+                // Дыбыс жоқ — кем дегенде толқын аяқталғанша күтеміз.
+                setTimeout(advance, waveDur + WAVE_TAIL_MS);
+              }
+            }, PRONOUNCE_LEAD_IN_MS);
+          }
         }
 
         return next;
       });
     },
-    [word, onComplete, onAlmostWin, checkPuzzleWin]
+    [
+      word,
+      containerW,
+      containerH,
+      tileSize,
+      shellContentInsets,
+      onComplete,
+      onAlmostWin,
+      checkPuzzleWin,
+      seamlessRoundWin,
+    ]
   );
 
   useLayoutEffect(() => {
