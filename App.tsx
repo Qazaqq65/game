@@ -186,7 +186,7 @@ function BackgroundMusicControls({
 }
 
 /** Firebase auth бірінші рет шешілгенше — бос экран орнына */
-function AppBootstrapLoading({ slowHint }: { slowHint: boolean }) {
+function AppBootstrapLoading() {
   return (
     <div
       style={{
@@ -219,77 +219,6 @@ function AppBootstrapLoading({ slowHint }: { slowHint: boolean }) {
       >
         Жүктелуде…
       </p>
-      {slowHint ? (
-        <p
-          style={{
-            margin: 0,
-            fontSize: 14,
-            color: "rgba(74, 61, 53, 0.72)",
-            maxWidth: 300,
-            lineHeight: 1.45,
-          }}
-        >
-          Әлі де күтеміз. Интернет баяу болуы мүмкін.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-/** Auth ұзақ түспесе — қайта жүктеу (қосылым сәтті болғанда автоматты жоғалады) */
-function AppBootstrapFatal({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 20,
-        background: "var(--game-anchor-soft)",
-        boxSizing: "border-box",
-        padding: 24,
-      }}
-    >
-      <p
-        style={{
-          margin: 0,
-          fontFamily: "var(--sans)",
-          color: "var(--game-anchor-ink)",
-          fontWeight: 700,
-          fontSize: "clamp(0.95rem, 3.8vw, 1.05rem)",
-          maxWidth: 320,
-          lineHeight: 1.45,
-        }}
-      >
-        {message}
-      </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        style={{
-          padding: "12px 22px",
-          fontSize: 16,
-          fontWeight: 700,
-          fontFamily: "var(--sans)",
-          borderRadius: 12,
-          border: "1px solid rgba(120, 95, 75, 0.28)",
-          background: "rgba(255, 255, 255, 0.92)",
-          color: "var(--game-anchor-ink)",
-          cursor: "pointer",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-        }}
-      >
-        Қайта жүктеу
-      </button>
     </div>
   );
 }
@@ -540,34 +469,17 @@ export default function App() {
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  /** Firebase auth ұзақ түспеген жағдай (экранда хабарлама + қайта жүктеу) */
-  const [authFatal, setAuthFatal] = useState<string | null>(null);
-  const [authSlowHint, setAuthSlowHint] = useState(false);
   const [isFs, setIsFs] = useState(false);
   const [bgMusicOn, setBgMusicOn] = useState(readBackgroundMusicPreference);
   const [bgMusicVolume, setBgMusicVolume] = useState(readBackgroundMusicVolume);
 
   useEffect(() => {
-    const slowId = window.setTimeout(() => setAuthSlowHint(true), 8000);
-    const fatalId = window.setTimeout(() => {
-      setAuthFatal(
-        "Қосылу ұзаққа созылды. Интернетті тексеріп, қайта байқап көріңіз."
-      );
-      setAuthLoading(false);
-    }, 22000);
-
     const unsub = onAuthStateChanged(auth, user => {
-      window.clearTimeout(slowId);
-      window.clearTimeout(fatalId);
-      setAuthSlowHint(false);
-      setAuthFatal(null);
       setCurrentUser(user);
       setAuthLoading(false);
     });
 
     return () => {
-      window.clearTimeout(slowId);
-      window.clearTimeout(fatalId);
       unsub();
     };
   }, []);
@@ -697,17 +609,8 @@ export default function App() {
       : "var(--game-anchor-soft)",
   }), [entered, gameLandscapeShort, isAlmaSession]);
 
-  if (authLoading && !authFatal) {
-    return <AppBootstrapLoading slowHint={authSlowHint} />;
-  }
-
-  if (authFatal) {
-    return (
-      <AppBootstrapFatal
-        message={authFatal}
-        onRetry={() => window.location.reload()}
-      />
-    );
+  if (authLoading) {
+    return <AppBootstrapLoading />;
   }
 
   // Кнопка "Войти" → полноэкранный логин
