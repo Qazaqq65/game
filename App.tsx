@@ -9,8 +9,6 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth } from "./firebase";
 import {
   preloadSoundsForWord,
   unlockAudio,
@@ -25,17 +23,18 @@ import { isFullscreenSupported, toggleFullscreen, fullscreenElement } from "./ut
 import { PuzzleBoard } from "./components/PuzzleBoard";
 import { WinScreen } from "./components/WinScreen";
 import { EntryMenu } from "./components/EntryMenu";
-import LoginPage from "./components/LoginPage";
 import {
   WORDS,
   WORD_MENU_GROUPS,
 } from "./data/words";
 import { DIGIT_LEVELS, DIGIT_ORDER_LEVEL_INDEX, resolveDigitLevelForPlay } from "./data/digitLevels";
 import { FIGURE_LEVELS } from "./data/figureLevels";
+import { RAIN_LEVELS } from "./data/rainLevels";
+import { LetterRain } from "./components/LetterRain";
 import { useBoardDimensions } from "./hooks/useBoardDimensions";
 import type { WordDef } from "./types";
 
-type PlaySource = "letters" | "digits" | "figures";
+type PlaySource = "letters" | "digits" | "figures" | "rain";
 
 /** Сан бөлімі: санау, сандар реті, қосу, азайту — әр деңгейді 3 рет шешкенше келесіге өтпейді. */
 const DIGIT_MULTI_ROUND_LEVEL_INDICES = new Set([1, 2, 3, 4]);
@@ -181,44 +180,6 @@ function BackgroundMusicControls({
           </button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-/** Firebase auth бірінші рет шешілгенше — бос экран орнына */
-function AppBootstrapLoading() {
-  return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 18,
-        background: "var(--game-anchor-soft)",
-        boxSizing: "border-box",
-        padding: 24,
-      }}
-    >
-      <div
-        className="app-boot-spinner"
-        role="status"
-        aria-live="polite"
-        aria-label="Жүктелуде"
-      />
-      <p
-        style={{
-          margin: 0,
-          fontFamily: "var(--sans)",
-          color: "var(--game-anchor-ink)",
-          fontWeight: 700,
-          fontSize: "clamp(1rem, 4vw, 1.15rem)",
-        }}
-      >
-        Жүктелуде…
-      </p>
     </div>
   );
 }
@@ -465,24 +426,9 @@ export default function App() {
   const [playSource, setPlaySource] = useState<PlaySource>("letters");
   const [wordIdx, setWordIdx] = useState(0);
   const [gameLandscapeShort, setGameLandscapeShort] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showAuthGate, setShowAuthGate] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [isFs, setIsFs] = useState(false);
   const [bgMusicOn, setBgMusicOn] = useState(readBackgroundMusicPreference);
   const [bgMusicVolume, setBgMusicVolume] = useState(readBackgroundMusicVolume);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, user => {
-      setCurrentUser(user);
-      setAuthLoading(false);
-    });
-
-    return () => {
-      unsub();
-    };
-  }, []);
 
   useLayoutEffect(() => {
     const sync = () => setGameLandscapeShort(readGameLandscapeShort());
@@ -550,22 +496,20 @@ export default function App() {
 
   const handlePickWord = useCallback(
     (w: WordDef, source: PlaySource) => {
-      if (!currentUser) {
-        setShowAuthGate(true);
-        return;
-      }
       setPlaySource(source);
       const list =
         source === "letters"
           ? WORDS
           : source === "digits"
             ? DIGIT_LEVELS
-            : FIGURE_LEVELS;
+            : source === "rain"
+              ? RAIN_LEVELS
+              : FIGURE_LEVELS;
       const i = list.findIndex(x => x === w);
       setWordIdx(i >= 0 ? i : 0);
       setEntered(true);
     },
-    [currentUser]
+    []
   );
 
   const activeLevels =
@@ -573,7 +517,9 @@ export default function App() {
       ? WORDS
       : playSource === "digits"
         ? DIGIT_LEVELS
-        : FIGURE_LEVELS;
+        : playSource === "rain"
+          ? RAIN_LEVELS
+          : FIGURE_LEVELS;
 
   /** Оптимизация: entered/wordIdx өзгермесе қайта есептелмейді. */
   const isAlmaSession = useMemo(
@@ -589,7 +535,7 @@ export default function App() {
     width: "100%" as const,
     flex: entered ? 1 : undefined,
     ...(entered
-      ? { minHeight: 0, maxHeight: "100dvh" }
+      ? { minHeight: "100dvh", height: "100dvh", maxHeight: "100dvh" }
       : { minHeight: "100svh" }),
     display: "flex" as const,
     flexDirection: "column" as const,
@@ -609,54 +555,15 @@ export default function App() {
       : "var(--game-anchor-soft)",
   }), [entered, gameLandscapeShort, isAlmaSession]);
 
-  if (authLoading) {
-    return <AppBootstrapLoading />;
-  }
-
-  // Кнопка "Войти" → полноэкранный логин
-  if (showLogin) {
-    return (
-      <>
-        <LoginPage
-          onBack={() => setShowLogin(false)}
-          onSuccess={() => setShowLogin(false)}
-        />
-        <div
-          style={{
-            position: "fixed",
-            top: "max(8px, calc(env(safe-area-inset-top, 0px) + 4px))",
-            right: "max(10px, env(safe-area-inset-right, 0px))",
-            zIndex: 1000,
-          }}
-        >
-          <BackgroundMusicControls
-            on={bgMusicOn}
-            volume={bgMusicVolume}
-            onToggle={toggleBackgroundMusic}
-            onVolumeChange={handleBackgroundMusicVolume}
-          />
-        </div>
-      </>
-    );
-  }
-
   return (
     <div style={rootStyle}>
-      {/* Клик по карточке без авторизации → модальный логин */}
-      {showAuthGate && (
-        <LoginPage
-          isModal
-          onBack={() => setShowAuthGate(false)}
-          onSuccess={() => setShowAuthGate(false)}
-        />
-      )}
-
       {!entered ? (
         <>
           <EntryMenu
             groups={WORD_MENU_GROUPS}
             digitLevels={DIGIT_LEVELS}
             figureLevels={FIGURE_LEVELS}
+            rainLevels={RAIN_LEVELS}
             onPickWord={handlePickWord}
           />
 
@@ -696,24 +603,6 @@ export default function App() {
                 {isFs ? "↙↗" : "↗↙"}
               </button>
             )}
-            {!currentUser && (
-              <button
-                onClick={() => setShowLogin(true)}
-                style={{
-                  padding: "7px 18px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  borderRadius: 10,
-                  border: "none",
-                  background: "#3b82f6",
-                  color: "#fff",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 8px rgba(59,130,246,0.35)",
-                }}
-              >
-                Кіру
-              </button>
-            )}
           </div>
         </>
       ) : (
@@ -739,18 +628,26 @@ export default function App() {
             style={{
               flex: 1,
               minHeight: 0,
+              height: "100%",
               width: "100%",
               display: "flex",
               flexDirection: "column",
             }}
           >
-            <GameSession
-              wordIdx={wordIdx}
-              setWordIdx={setWordIdx}
-              onHome={handleHome}
-              levels={activeLevels}
-              sessionKey={playSource}
-            />
+            {playSource === "rain" ? (
+              <LetterRain
+                level={RAIN_LEVELS[wordIdx % RAIN_LEVELS.length]}
+                onHome={handleHome}
+              />
+            ) : (
+              <GameSession
+                wordIdx={wordIdx}
+                setWordIdx={setWordIdx}
+                onHome={handleHome}
+                levels={activeLevels}
+                sessionKey={playSource}
+              />
+            )}
           </div>
         </>
       )}

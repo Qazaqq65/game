@@ -78,10 +78,11 @@ interface EntryMenuProps {
   groups: WordMenuGroup[];
   digitLevels: WordDef[];
   figureLevels: WordDef[];
-  onPickWord: (word: WordDef, source: "letters" | "digits" | "figures") => void;
+  rainLevels: WordDef[];
+  onPickWord: (word: WordDef, source: "letters" | "digits" | "figures" | "rain") => void;
 }
 
-type MenuCategory = "letters" | "digits" | "figures";
+type MenuCategory = "letters" | "digits" | "rain";
 
 type FlatItem = { word: WordDef; startsWithLetter: string };
 
@@ -136,7 +137,8 @@ function readSnappyMenu(): boolean {
 export function EntryMenu({
   groups,
   digitLevels,
-  figureLevels,
+  figureLevels: _figureLevels,
+  rainLevels,
   onPickWord,
 }: EntryMenuProps) {
   const { isLowEnd } = useDeviceTier();
@@ -151,8 +153,8 @@ export function EntryMenu({
   const [digitLevelKey, setDigitLevelKey] = useState(
     () => digitLevels.find(w => w.levelNumber != null)?.levelNumber ?? 1
   );
-  const [figureLevelKey, setFigureLevelKey] = useState(
-    () => figureLevels.find(w => w.levelNumber != null)?.levelNumber ?? 1
+  const [rainLevelKey, setRainLevelKey] = useState(
+    () => rainLevels.find(w => w.levelNumber != null)?.levelNumber ?? 1
   );
   const [centeredCardIdx, setCenteredCardIdx] = useState(0);
   const [filterScroll, setFilterScroll] = useState<ScrollEdges>({
@@ -168,7 +170,7 @@ export function EntryMenu({
   const [categoryThumbX, setCategoryThumbX] = useState(0);
   const filterNavRef = useRef<HTMLElement>(null);
   const digitFilterNavRef = useRef<HTMLElement>(null);
-  const figureFilterNavRef = useRef<HTMLElement>(null);
+  const rainFilterNavRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const syncCategoryThumb = useCallback(() => {
@@ -202,8 +204,8 @@ export function EntryMenu({
     if (menuCategory === "digits") {
       return digitLevels.map(w => ({ word: w, startsWithLetter: "" }));
     }
-    if (menuCategory === "figures") {
-      return figureLevels.map(w => ({ word: w, startsWithLetter: "" }));
+    if (menuCategory === "rain") {
+      return rainLevels.map(w => ({ word: w, startsWithLetter: "" }));
     }
     const out: FlatItem[] = [];
     for (const g of groups) {
@@ -212,13 +214,13 @@ export function EntryMenu({
       }
     }
     return out;
-  }, [groups, digitLevels, figureLevels, menuCategory]);
+  }, [groups, digitLevels, rainLevels, menuCategory]);
 
   const menuCardCount =
     flatItems.length +
     (menuCategory === "letters" ||
     menuCategory === "digits" ||
-    menuCategory === "figures"
+    menuCategory === "rain"
       ? 1
       : 0);
 
@@ -265,15 +267,15 @@ export function EntryMenu({
     return m;
   }, [digitLevels]);
 
-  const firstIndexByFigureLevel = useMemo(() => {
+  const firstIndexByRainLevel = useMemo(() => {
     const m: Record<number, number> = {};
-    figureLevels.forEach((w, i) => {
+    rainLevels.forEach((w, i) => {
       if (w.levelNumber != null) {
         m[w.levelNumber] = i;
       }
     });
     return m;
-  }, [figureLevels]);
+  }, [rainLevels]);
 
   const scrollToLetter = useCallback(
     (letter: string) => {
@@ -327,10 +329,10 @@ export function EntryMenu({
     [firstIndexByDigitLevel, wordsVertical]
   );
 
-  const scrollToFigureLevel = useCallback(
+  const scrollToRainLevel = useCallback(
     (level: number) => {
-      setFigureLevelKey(level);
-      const idx = firstIndexByFigureLevel[level];
+      setRainLevelKey(level);
+      const idx = firstIndexByRainLevel[level];
       requestAnimationFrame(() => {
         if (idx !== undefined) {
           cardRefs.current[idx]?.scrollIntoView({
@@ -339,9 +341,9 @@ export function EntryMenu({
             inline: wordsVertical ? "nearest" : "center",
           });
         }
-        const nav = figureFilterNavRef.current;
+        const nav = rainFilterNavRef.current;
         const btn = nav?.querySelector<HTMLElement>(
-          `[data-figure-level="${CSS.escape(String(level))}"]`
+          `[data-rain-level="${CSS.escape(String(level))}"]`
         );
         btn?.scrollIntoView({
           behavior: "smooth",
@@ -350,7 +352,7 @@ export function EntryMenu({
         });
       });
     },
-    [firstIndexByFigureLevel, wordsVertical]
+    [firstIndexByRainLevel, wordsVertical]
   );
 
   const scrollFilterBy = useCallback(
@@ -360,8 +362,8 @@ export function EntryMenu({
           ? filterNavRef.current
           : menuCategory === "digits"
             ? digitFilterNavRef.current
-            : menuCategory === "figures"
-              ? figureFilterNavRef.current
+            : menuCategory === "rain"
+              ? rainFilterNavRef.current
               : null;
       if (!el) return;
       const step = Math.max(96, Math.round(el.clientWidth * 0.52));
@@ -426,8 +428,8 @@ export function EntryMenu({
         ? filterNavRef.current
         : menuCategory === "digits"
           ? digitFilterNavRef.current
-          : menuCategory === "figures"
-            ? figureFilterNavRef.current
+          : menuCategory === "rain"
+            ? rainFilterNavRef.current
             : null;
     if (!el) return;
     let rafId: number | null = null;
@@ -451,7 +453,7 @@ export function EntryMenu({
       if (rafId != null) cancelAnimationFrame(rafId);
       ro.disconnect();
     };
-  }, [groups.length, digitLevels.length, figureLevels.length, menuCategory]);
+  }, [groups.length, digitLevels.length, rainLevels.length, menuCategory]);
 
   useEffect(() => {
     if (menuCategory === "letters" && groups[0]) {
@@ -466,10 +468,10 @@ export function EntryMenu({
   }, [menuCategory, digitLevels]);
 
   useEffect(() => {
-    if (menuCategory === "figures" && figureLevels[0]?.levelNumber != null) {
-      setFigureLevelKey(figureLevels[0].levelNumber);
+    if (menuCategory === "rain" && rainLevels[0]?.levelNumber != null) {
+      setRainLevelKey(rainLevels[0].levelNumber);
     }
-  }, [menuCategory, figureLevels]);
+  }, [menuCategory, rainLevels]);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -535,7 +537,7 @@ export function EntryMenu({
             ref={categoryTrackRef}
             className={styles.categorySwitch}
             role="group"
-            aria-label="Әріптер, сандар немесе пішіндер"
+            aria-label="Әріптер, сандар немесе жаңбыр"
           >
             <motion.div
               aria-hidden
@@ -580,14 +582,14 @@ export function EntryMenu({
             <button
               type="button"
               className={
-                menuCategory === "figures"
+                menuCategory === "rain"
                   ? `${styles.categoryBtn} ${styles.categoryBtnActive}`
                   : styles.categoryBtn
               }
-              aria-pressed={menuCategory === "figures"}
-              onClick={() => setMenuCategory("figures")}
+              aria-pressed={menuCategory === "rain"}
+              onClick={() => setMenuCategory("rain")}
             >
-              Пішіндер
+              Жаңбыр
             </button>
           </div>
           {menuCategory === "letters" ? (
@@ -692,7 +694,7 @@ export function EntryMenu({
               </button>
             </div>
           ) : null}
-          {menuCategory === "figures" ? (
+          {menuCategory === "rain" ? (
             <div className={styles.filterWrap}>
               <button
                 type="button"
@@ -704,25 +706,25 @@ export function EntryMenu({
                 <ArrowIcon dir="left" />
               </button>
               <nav
-                ref={figureFilterNavRef}
+                ref={rainFilterNavRef}
                 className={styles.filter}
-                aria-label="Пішіндер деңгейі"
+                aria-label="Жаңбыр деңгейі"
               >
-                {figureLevels.map(w => {
+                {rainLevels.map(w => {
                   const lvl = w.levelNumber;
                   if (lvl == null) return null;
                   return (
                     <motion.button
                       key={lvl}
                       type="button"
-                      data-figure-level={lvl}
-                      aria-pressed={figureLevelKey === lvl}
+                      data-rain-level={lvl}
+                      aria-pressed={rainLevelKey === lvl}
                       className={
-                        figureLevelKey === lvl
+                        rainLevelKey === lvl
                           ? `${styles.filterBtn} ${styles.filterBtnOn}`
                           : styles.filterBtn
                       }
-                      onClick={() => scrollToFigureLevel(lvl)}
+                      onClick={() => scrollToRainLevel(lvl)}
                       whileHover={{ scale: 1.06, y: -2 }}
                       whileTap={{ scale: 0.94 }}
                       transition={{
@@ -773,14 +775,14 @@ export function EntryMenu({
               className={styles.track}
               role="group"
               aria-label={
-                menuCategory === "digits" || menuCategory === "figures"
+                menuCategory === "digits" || menuCategory === "rain"
                   ? "Деңгейлер"
                   : "Сөздер"
               }
             >
             {flatItems.map((item, i) => {
               const tone: MenuCardToneCss = (() => {
-                if (menuCategory === "digits" || menuCategory === "figures") {
+                if (menuCategory === "digits" || menuCategory === "rain") {
                   return MENU_CARD_TONES[
                     menuToneIndexForDigitCard(item.word.levelNumber)
                   ];
@@ -800,8 +802,8 @@ export function EntryMenu({
                 key={
                   menuCategory === "digits"
                     ? `digit-${item.word.word}-${item.word.levelNumber ?? i}`
-                    : menuCategory === "figures"
-                      ? `figure-${item.word.word}-${item.word.levelNumber ?? i}`
+                    : menuCategory === "rain"
+                      ? `rain-${item.word.word}-${item.word.levelNumber ?? i}`
                       : `${item.startsWithLetter}-${item.word.word}-${item.word.emoji}-${i}`
                 }
                 ref={el => {
@@ -855,8 +857,8 @@ export function EntryMenu({
                     item.word,
                     menuCategory === "digits"
                       ? "digits"
-                      : menuCategory === "figures"
-                        ? "figures"
+                      : menuCategory === "rain"
+                        ? "rain"
                         : "letters"
                   )
                 }
@@ -923,16 +925,16 @@ export function EntryMenu({
                 </span>
               </div>
             ) : null}
-            {menuCategory === "figures" ? (
+            {menuCategory === "rain" ? (
               <div
                 className={`${styles.card} ${styles.cardComingSoon}`}
                 data-menu-card
                 role="note"
-                aria-label="Келесі пішін тапсырмалары жақында."
+                aria-label="Келесі жаңбыр деңгейлері жақында."
               >
                 <span className={styles.cardInner}>
                   <span className={styles.cardComingSoonText}>
-                    Келесі пішін деңгейлері
+                    Келесі жаңбыр деңгейлері
                     <br />
                     Жақында қосылады
                   </span>
@@ -957,7 +959,7 @@ export function EntryMenu({
               className={styles.trackDots}
               role="tablist"
               aria-label={
-                menuCategory === "digits" || menuCategory === "figures"
+                menuCategory === "digits" || menuCategory === "rain"
                   ? "Деңгейлер бойынша"
                   : "Карточкалар бойынша"
               }

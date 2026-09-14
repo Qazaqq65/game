@@ -1,0 +1,230 @@
+.shell {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #6eb7dc;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  touch-action: none;
+  cursor: grab;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 10px 0;
+  pointer-events: auto;
+}
+
+.homeBtn,
+.iconBtn {
+  pointer-events: auto;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-height: 44px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--game-anchor-ink);
+  background: rgba(255, 254, 251, 0.92);
+  box-shadow: 0 2px 10px rgba(60, 40, 20, 0.12);
+  cursor: pointer;
+}
+
+.targetCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 6px 16px 8px;
+  border-radius: 18px;
+  background: rgba(255, 254, 251, 0.94);
+  box-shadow: 0 6px 22px rgba(60, 40, 20, 0.14);
+  pointer-events: none;
+}
+
+.targetLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a7b70;
+}
+
+.targetGlyph {
+  font-family: var(--font-display-kz);
+  font-size: clamp(2.2rem, 10vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1;
+  color: #c2410c;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(255, 254, 251, 0.9);
+  box-shadow: 0 2px 10px rgba(60, 40, 20, 0.1);
+  pointer-events: none;
+}
+
+.score {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--game-anchor-ink);
+}
+
+.combo {
+  font-weight: 800;
+  font-size: 13px;
+  color: #c2410c;
+  min-height: 1.1em;
+}
+
+.hearts {
+  letter-spacing: 2px;
+  font-size: 16px;
+  color: #e11d48;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, #6eb7dc 55%, transparent);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.panel {
+  width: min(360px, 100%);
+  padding: 28px 22px 22px;
+  border-radius: 24px;
+  background: #fffefb;
+  box-shadow: 0 16px 48px rgba(60, 40, 20, 0.18);
+  text-align: center;
+}
+
+.panelTitle {
+  margin: 0 0 8px;
+  font-size: clamp(1.4rem, 6vw, 1.85rem);
+  font-weight: 900;
+  color: #2d1f16;
+}
+
+.panelBody {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #7a6a5f;
+  line-height: 1.45;
+}
+
+.bigLetter {
+  font-family: var(--font-display-kz);
+  font-size: 4.2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #c2410c;
+  margin: 4px 0 14px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.primary,
+.ghost {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  min-height: 48px;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #ff9433, #f57c1f);
+  box-shadow: 0 6px 18px rgba(245, 124, 31, 0.38);
+}
+
+.ghost {
+  color: var(--game-anchor-ink);
+  background: #f5f0ea;
+}
+
+.progress {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 254, 251, 0.55);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #26c24a, #f57c1f);
+  transition: width 0.2s ease;
+}
+
+.playHint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+  z-index: 3;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(61, 52, 40, 0.72);
+  text-shadow: 0 1px 0 rgba(255, 254, 251, 0.7);
+  pointer-events: none;
+}

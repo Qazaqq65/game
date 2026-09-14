@@ -127,6 +127,9 @@ export async function checkDevice(uid) {
  * Возвращает { user } при успехе или выбрасывает Error.
  */
 export async function loginWithDevice(email, password) {
+  if (!auth || !db) {
+    throw new Error("Кіру қазір қолжетімсіз.");
+  }
   const credential = await signInWithEmailAndPassword(auth, email, password);
   const { user } = credential;
 

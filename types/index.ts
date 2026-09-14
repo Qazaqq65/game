@@ -109,6 +109,8 @@ export interface WordDef {
    * intro — танысу, find — табу, sort — сұрыптау (ойын мазмұны кейін толықтырылады).
    */
   figureStage?: "intro" | "find" | "sort";
+  /** Әріп жаңбыры — canvas catch-ойыны. */
+  rainStage?: "easy" | "medium" | "storm";
 }
 
 export interface TileState {

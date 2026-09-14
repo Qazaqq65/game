@@ -194,11 +194,6 @@ export default function LoginPage({ onBack, onSuccess, isModal = false }) {
         </p>
       </FadeUp>
 
-      {/* Price */}
-      <FadeUp delay={100}>
-        <button className="lp-price-btn" style={s.priceBtn}>2 990 ₸</button>
-      </FadeUp>
-
       {/* Step 1 */}
       <FadeUp delay={150}>
         <StepLabel num="1" text="Шарттармен танысыңыз" />
@@ -239,38 +234,7 @@ export default function LoginPage({ onBack, onSuccess, isModal = false }) {
 
       {/* Step 2 */}
       <FadeUp delay={200}>
-        <StepLabel num="2" text="Төлем үшін жазыңыз" dim={locked} />
-        <div style={{ ...s.socialGrid, opacity: locked ? 0.45 : 1, pointerEvents: locked ? "none" : "auto" }}>
-          <a
-            href={accepted ? "https://t.me/qazaqq65" : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lp-social-card"
-            style={s.socialCard}
-          >
-            <img src="/telegram-svgrepo-com.svg" alt="Telegram" width={48} height={48} />
-            <span style={s.socialName}>Telegram</span>
-            <span style={{ ...s.socialHandle, color: "#229ED9" }}>@qazaqq65</span>
-            <span className="lp-social-strip" style={{ ...s.socialStrip, background: "#229ED9" }} />
-          </a>
-          <a
-            href={accepted ? "https://wa.me/77087257147" : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lp-social-card"
-            style={s.socialCard}
-          >
-            <img src="/whatsapp-svgrepo-com.svg" alt="WhatsApp" width={48} height={48} style={{ borderRadius: 12 }} />
-            <span style={s.socialName}>WhatsApp</span>
-            <span style={{ ...s.socialHandle, color: "#25d366" }}>+7 708 725 71 47</span>
-            <span className="lp-social-strip" style={{ ...s.socialStrip, background: "#25d366" }} />
-          </a>
-        </div>
-      </FadeUp>
-
-      {/* Step 3 */}
-      <FadeUp delay={250}>
-        <StepLabel num="3" text="Төлегеннен кейін кіріңіз" />
+        <StepLabel num="2" text="Кіру" dim={locked} />
 
         {!showLoginForm ? (
           <div
